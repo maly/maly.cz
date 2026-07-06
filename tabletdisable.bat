@@ -1,2 +1,0 @@
-reg add HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ImmersiveShell /v TabletMode /d 0x0 /t REG_DWORD /f
-reg add HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ImmersiveShell /v SignInMode /d 0x1 /t REG_DWORD /f

@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Martin Malý — text, kód, dráty a nové možnosti</title>
+  <meta name="description" content="Martin Malý — osobní stránka o textech, kódu, médiích, AI, elektronice a nových možnostech, které stojí za osahání." />
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --paper: #ffffff;
+      --text: #101317;
+      --muted: #5f6872;
+      --soft: #d8dde3;
+      --line: #bfc7d1;
+      --hard: #101317;
+      --accent: #006c86;
+      --accent-2: #0b7a4f;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      background:
+        linear-gradient(to right, rgba(16,19,23,.045) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(16,19,23,.045) 1px, transparent 1px),
+        var(--bg);
+      background-size: 48px 48px;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .page {
+      min-height: 100vh;
+    }
+
+    .nav {
+      width: min(var(--max), calc(100% - 48px));
+      margin: 0 auto;
+      padding: 28px 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 1px solid var(--hard);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      background: var(--hard);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.07em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .nav-links a:hover { color: var(--hard); }
+
+    .hero {
+      width: min(var(--max), calc(100% - 48px));
+      margin: 54px auto 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(300px, .82fr);
+      gap: 48px;
+      align-items: stretch;
+    }
+
+    .hero-copy {
+      background: rgba(255,255,255,.72);
+      padding: clamp(34px, 6vw, 76px) 0 clamp(34px, 6vw, 76px) clamp(26px, 4vw, 48px);
+      border-left: 8px solid var(--hard);
+      position: relative;
+    }
+
+    .hero-copy::before {
+      content: "01 / PROFILE";
+      position: absolute;
+      top: 0;
+      left: clamp(26px, 4vw, 48px);
+      transform: translateY(-50%);
+      padding: 4px 9px;
+      background: var(--bg);
+      border: 1px solid var(--hard);
+      color: var(--hard);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .eyebrow {
+      margin: 0 0 20px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 9ch;
+      font-size: clamp(58px, 9vw, 116px);
+      line-height: .86;
+      letter-spacing: -.085em;
+    }
+
+    .lead {
+      margin: 30px 0 0;
+      max-width: 740px;
+      color: #252b31;
+      font-size: clamp(22px, 2.1vw, 30px);
+      line-height: 1.22;
+      letter-spacing: -.045em;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 16px;
+      border: 1px solid var(--hard);
+      background: var(--paper);
+      color: var(--hard);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .button.primary {
+      background: var(--hard);
+      color: #fff;
+    }
+
+    .button:hover { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .portrait-card {
+      background: rgba(255,255,255,.64);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 610px;
+      border-top: 8px solid var(--hard);
+    }
+
+    .portrait {
+      min-height: 430px;
+      border: 1px solid var(--hard);
+      border-top: 0;
+      background: #fff;
+      display: grid;
+      place-items: stretch;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .portrait svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .portrait-note {
+      margin-top: 18px;
+      padding: 18px 18px 20px;
+      display: grid;
+      gap: 9px;
+      background: var(--paper);
+      border: 1px solid var(--hard);
+      border-left-width: 6px;
+    }
+
+    .portrait-note-label {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .portrait-note strong {
+      font-size: 24px;
+      line-height: 1.04;
+      letter-spacing: -.05em;
+    }
+
+    .portrait-note span:last-child {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 34ch;
+    }
+
+    main {
+      width: min(var(--max), calc(100% - 48px));
+      margin: 56px auto 84px;
+      display: grid;
+      gap: 46px;
+    }
+
+    .index {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      border-top: 2px solid var(--hard);
+      border-bottom: 1px solid var(--hard);
+      background: rgba(255,255,255,.56);
+    }
+
+    .index-label {
+      padding: 14px 18px 14px 0;
+      border-right: 1px solid var(--hard);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .index-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 0 10px 18px;
+      align-items: center;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border-left: 3px solid var(--hard);
+      background: var(--paper);
+      color: #20262d;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tag::before {
+      content: "#";
+      margin-right: 5px;
+      color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .section-card {
+      padding-top: 22px;
+      border-top: 2px solid var(--hard);
+    }
+
+    .section-card:nth-child(even) { border-top-color: var(--accent); }
+
+    h2 {
+      margin: 0 0 18px;
+      font-size: clamp(30px, 4vw, 50px);
+      line-height: .96;
+      letter-spacing: -.065em;
+    }
+
+    .section-card p {
+      margin: 0;
+      color: #2b3137;
+      font-size: 17px;
+      max-width: 62ch;
+    }
+
+    .section-card p + p { margin-top: 15px; }
+
+    .list {
+      display: grid;
+      gap: 0;
+      margin-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: minmax(130px, .34fr) 1fr;
+      gap: 18px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .item strong {
+      letter-spacing: -.03em;
+      font-size: 17px;
+    }
+
+    .item span {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .refs {
+      display: grid;
+      gap: 1px;
+      background: var(--hard);
+      border: 1px solid var(--hard);
+      margin-top: 24px;
+    }
+
+    .ref-link {
+      display: grid;
+      grid-template-columns: 150px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      min-height: 62px;
+      padding: 13px 16px;
+      background: var(--paper);
+    }
+
+    .ref-link:hover { background: #f2f5f8; }
+
+    .ref-kind {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .ref-title {
+      font-size: 17px;
+      font-weight: 850;
+      letter-spacing: -.03em;
+    }
+
+    .ref-url {
+      color: var(--muted);
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 26px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--hard);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .hero { gap: 34px; }
+      .portrait-card { min-height: auto; }
+      .index { grid-template-columns: 1fr; }
+      .index-label { border-right: 0; border-bottom: 1px solid var(--hard); padding-bottom: 10px; }
+      .index-tags { padding-left: 0; }
+      .ref-link { grid-template-columns: 1fr; gap: 4px; }
+      .ref-url { white-space: normal; }
+      .nav-links { display: none; }
+      .hero-copy { padding-right: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .nav, .hero, main { width: min(100% - 28px, var(--max)); }
+      .hero { margin-top: 34px; }
+      .index-tags { gap: 6px; }
+      .item { grid-template-columns: 1fr; gap: 4px; }
+      .footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav" aria-label="Hlavní navigace">
+      <a class="brand" href="#top" aria-label="Martin Malý">
+        <span class="brand-mark">MM</span>
+        <span>Martin Malý</span>
+      </a>
+      <div class="nav-links">
+        <a href="#profil">Proč</a>
+        <a href="#prace">Věci</a>
+        <a href="#temata">Území</a>
+        <a href="#reference">Odkazy</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <section class="hero-copy">
+        <p class="eyebrow">Text · software · AI · elektronika</p>
+        <h1>Martin Malý</h1>
+        <p class="lead">Píšu, programuji a testuji nové technologie v praxi. Dlouhodobě se pohybuji mezi médii, softwarem, AI a elektronikou.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#profil">Proč tu jsem</a>
+          <a class="button" href="#prace">Věci</a>
+          <a class="button" href="#reference">Odkazy</a>
+        </div>
+      </section>
+
+      <aside class="portrait-card" aria-label="Technická mapa">
+        <div class="portrait">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 920" role="img" aria-labelledby="identityTitle identityDesc">
+  <title id="identityTitle">Technická mapa myšlení a tvorby</title>
+  <desc id="identityDesc">Schéma propojující média, software, AI a elektroniku s texty, nástroji a systémy, procesem rozebrání, zkoušení, popisu a stavby, a výstupy článek, kniha, prototyp a nástroj.</desc>
+  <defs>
+    <style>
+      .bg{fill:#fbfcfd}
+      .grid{stroke:#e6eaee;stroke-width:1}
+      .gridDots{fill:#d9dee4}
+      .line{stroke:#15181c;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter}
+      .soft{stroke:#98a3ae;stroke-width:1.25;fill:none;stroke-dasharray:4 5}
+      .box{fill:#ffffff;stroke:#15181c;stroke-width:2}
+      .dashbox{fill:#ffffff;stroke:#7e8893;stroke-width:1.5;stroke-dasharray:5 5}
+      .node{fill:#ffffff;stroke:#15181c;stroke-width:2}
+      .label{font: 700 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#15181c; letter-spacing:.08em}
+      .tiny{font: 600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#55606b; letter-spacing:.08em}
+      .index{font: 700 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#15181c}
+      .big{font: 700 17px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#15181c}
+      .centerbig{font: 700 22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#15181c}
+      .centerSmall{font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#33404b}
+      .meta{font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#2d353d}
+      .accent{fill:#0b6f88}
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="920" height="920" rx="0"/>
+
+  <!-- page frame -->
+  <path class="line" d="M14 20h26M14 20v26M906 20h-26M906 20v26M14 900h26M14 900v-26M906 900h-26M906 900v-26"/>
+  <path class="soft" d="M30 82h860M30 790h860"/>
+
+  <!-- grid -->
+  <g>
+    <path class="grid" d="M88 80v660M168 80v660M248 80v660M328 80v660M408 80v660M488 80v660M568 80v660M648 80v660M728 80v660M808 80v660"/>
+    <path class="grid" d="M88 140h720M88 230h720M88 320h720M88 410h720M88 500h720M88 590h720M88 680h720"/>
+  </g>
+
+  <!-- top header -->
+  <text class="label" x="42" y="40">DIAGRAM_01</text>
+  <text class="label" x="160" y="40">---------  /  IDENTITA.GRAF</text>
+  <text class="label" x="708" y="40">VER_1.0  -----  2026</text>
+
+  <!-- top axis -->
+  <g>
+    <text class="tiny" x="80" y="72">00</text><text class="tiny" x="160" y="72">10</text><text class="tiny" x="240" y="72">20</text><text class="tiny" x="320" y="72">30</text><text class="tiny" x="400" y="72">40</text><text class="tiny" x="480" y="72">50</text><text class="tiny" x="560" y="72">60</text><text class="tiny" x="640" y="72">70</text><text class="tiny" x="720" y="72">80</text><text class="tiny" x="800" y="72">90</text>
+    <g class="line">
+      <path d="M88 78v12M168 78v12M248 78v12M328 78v12M408 78v12M488 78v12M568 78v12M648 78v12M728 78v12M808 78v12"/>
+      <path d="M82 84h12M162 84h12M242 84h12M322 84h12M402 84h12M482 84h12M562 84h12M642 84h12M722 84h12M802 84h12"/>
+    </g>
+  </g>
+
+  <!-- left row markers -->
+  <g>
+    <text class="label" x="22" y="145">A</text>
+    <text class="label" x="22" y="235">B</text>
+    <text class="label" x="22" y="325">C</text>
+    <text class="label" x="22" y="505">D</text>
+    <text class="label" x="22" y="686">F</text>
+    <text class="tiny" x="886" y="145">_01</text>
+    <text class="tiny" x="886" y="235">_02</text>
+    <text class="tiny" x="886" y="325">_03</text>
+    <text class="tiny" x="886" y="505">_04</text>
+    <text class="tiny" x="886" y="686">_06</text>
+  </g>
+
+  <!-- source boxes -->
+  <g>
+    <text class="index" x="102" y="122">01</text>
+    <rect class="box" x="100" y="150" width="150" height="78"/>
+    <text class="big" x="120" y="188">MÉDIA</text>
+    <text class="tiny" x="120" y="208">/ vstupy</text>
+    <rect class="node" x="244" y="180" width="10" height="10"/>
+
+    <text class="index" x="102" y="302">02</text>
+    <rect class="box" x="100" y="330" width="150" height="78"/>
+    <text class="big" x="120" y="368">SOFTWARE</text>
+    <text class="tiny" x="120" y="388">/ vstupy</text>
+    <rect class="node" x="244" y="360" width="10" height="10"/>
+
+    <text class="index" x="102" y="482">03</text>
+    <rect class="box" x="100" y="510" width="150" height="78"/>
+    <text class="big" x="120" y="548">AI</text>
+    <text class="tiny" x="120" y="568">/ vstupy</text>
+    <rect class="node" x="244" y="540" width="10" height="10"/>
+
+    <text class="index" x="102" y="662">04</text>
+    <rect class="box" x="100" y="690" width="150" height="78"/>
+    <text class="big" x="113" y="728">ELEKTRONIKA</text>
+    <text class="tiny" x="120" y="748">/ vstupy</text>
+    <rect class="node" x="244" y="720" width="10" height="10"/>
+  </g>
+
+  <!-- central box -->
+  <text class="index" x="396" y="316">10</text>
+  <rect class="box" x="372" y="344" width="196" height="178"/>
+  <text class="centerbig" x="396" y="392">TEXT /</text>
+  <text class="centerbig" x="396" y="430">KÓD /</text>
+  <text class="centerbig" x="396" y="468">ELEKTRONIKA</text>
+  <path class="soft" d="M395 486h150"/>
+  <text class="centerSmall" x="396" y="508">čtu</text>
+  <text class="centerSmall" x="396" y="529">testuji</text>
+  <text class="centerSmall" x="396" y="550">píšu / stavím</text>
+  <rect class="node" x="562" y="426" width="10" height="10"/>
+  <rect class="node" x="342" y="426" width="10" height="10"/>
+
+  <!-- process section -->
+  <text class="index" x="630" y="190">20</text>
+  <text class="tiny" x="690" y="190">/ proces</text>
+  <rect class="node" x="642" y="248" width="10" height="10"/>
+  <rect class="node" x="642" y="338" width="10" height="10"/>
+  <rect class="node" x="642" y="428" width="10" height="10"/>
+  <rect class="node" x="642" y="518" width="10" height="10"/>
+
+  <text class="tiny" x="688" y="222">20.1</text>
+  <rect class="dashbox" x="700" y="232" width="112" height="44"/>
+  <text class="meta" x="724" y="259">rozebrat</text>
+
+  <text class="tiny" x="688" y="312">20.2</text>
+  <rect class="dashbox" x="700" y="322" width="112" height="44"/>
+  <text class="meta" x="730" y="349">vyzkoušet</text>
+
+  <text class="tiny" x="688" y="402">20.3</text>
+  <rect class="dashbox" x="700" y="412" width="112" height="44"/>
+  <text class="meta" x="730" y="439">popsat</text>
+
+  <text class="tiny" x="688" y="492">20.4</text>
+  <rect class="dashbox" x="700" y="502" width="112" height="44"/>
+  <text class="meta" x="724" y="529">spustit</text>
+
+  <!-- outputs -->
+  <text class="index" x="292" y="802">30</text>
+  <text class="tiny" x="292" y="820">/ výstupy</text>
+
+  <text class="tiny" x="412" y="802">30.1</text>
+  <rect class="box" x="405" y="816" width="96" height="46"/>
+  <text class="meta" x="435" y="844">článek</text>
+  <rect class="node" x="448" y="778" width="10" height="10"/>
+
+  <text class="tiny" x="543" y="802">30.2</text>
+  <rect class="box" x="536" y="816" width="96" height="46"/>
+  <text class="meta" x="572" y="844">kniha</text>
+  <rect class="node" x="579" y="778" width="10" height="10"/>
+
+  <text class="tiny" x="674" y="802">30.3</text>
+  <rect class="box" x="667" y="816" width="96" height="46"/>
+  <text class="meta" x="691" y="844">prototyp</text>
+  <rect class="node" x="710" y="778" width="10" height="10"/>
+
+  <text class="tiny" x="805" y="802">30.4</text>
+  <rect class="box" x="798" y="816" width="96" height="46"/>
+  <text class="meta" x="826" y="844">nástroj</text>
+  <rect class="node" x="841" y="778" width="10" height="10"/>
+
+  <!-- connectors -->
+  <g class="line">
+    <path d="M254 185H300V426H342"/>
+    <path d="M254 365H288V426H342"/>
+    <path d="M254 545H276V426H342"/>
+    <path d="M254 725H300V426H342"/>
+
+    <path d="M572 431H642"/>
+    <path d="M648 253H680M648 343H680M648 433H680M648 523H680"/>
+    <path d="M648 253V778H845"/>
+
+    <path d="M453 778v38M584 778v38M715 778v38M846 778v38"/>
+  </g>
+
+  <!-- footer legend -->
+  <text class="label" x="42" y="826">PRACOVNÍ MAPA</text>
+  <text class="tiny" x="42" y="848">vstupy -&gt; pokus -&gt; výsledek</text>
+  <text class="tiny" x="42" y="868">poznámky / testy / iterace</text>
+
+  <path class="soft" d="M220 830v44M620 830v44"/>
+  <text class="meta" x="650" y="828">MĚŘÍTKO</text><text class="meta" x="758" y="828">: 1:1</text>
+  <text class="meta" x="650" y="848">MŘÍŽKA</text><text class="meta" x="758" y="848">: 10x10</text>
+  <text class="meta" x="650" y="868">JEDNOTKA</text><text class="meta" x="758" y="868">: poznámka</text>
+  <text class="meta" x="650" y="888">STAV</text><text class="meta" x="758" y="888">: otevřeno</text>
+
+  <g class="line">
+    <path d="M844 846h18M853 837v18"/>
+    <path d="M306 850h110M306 858h110" opacity="0.3"/>
+  </g>
+</svg>
+
+        </div>
+        <div class="portrait-note">
+          <span class="portrait-note-label">Mapa</span>
+          <strong>Pracovní mapa.</strong>
+          <span>Text, software, média, AI, elektronika.</span>
+        </div>
+      </aside>
+    </header>
+
+    <main>
+      <section class="index" id="temata" aria-label="Hlavní témata">
+        <div class="index-label">Území</div>
+        <div class="index-tags">
+          <span class="tag">Média</span>
+          <span class="tag">Rozjíždění věcí</span>
+          <span class="tag">AI v redakci</span>
+          <span class="tag">Prototypy</span>
+          <span class="tag">Automatizace</span>
+          <span class="tag">Lokální modely</span>
+          <span class="tag">Mikroelektronika</span>
+          <span class="tag">Retrocomputing</span>
+          <span class="tag">Odborné knihy</span>
+        </div>
+      </section>
+
+      <section class="grid" id="profil">
+        <article class="section-card">
+          <h2>Směr</h2>
+          <p>Zajímají mě věci ve fázi, kdy ještě nejsou usazené.</p>
+          <p>Raději si je testuji sám: spustit, použít, rozebrat, napsat si poznámky a zjistit, kde jsou hranice.</p>
+        </article>
+
+        <article class="section-card" id="prace">
+          <h2>Dělám</h2>
+          <p>Výsledkem bývá text, nástroj, prototyp, kniha nebo poznámka.</p>
+          <div class="list">
+            <div class="item">
+              <strong>Média a text</strong>
+              <span>Texty, redakce, čtenáři, placený obsah.</span>
+            </div>
+            <div class="item">
+              <strong>Kód a automatizace</strong>
+              <span>Skripty, modely, workflow, automatizace.</span>
+            </div>
+            <div class="item">
+              <strong>Dráty a knihy</strong>
+              <span>Mikrokontroléry, retrocomputing, elektronika.</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid">
+
+        <article class="section-card" id="reference">
+          <h2>Odkazy</h2>
+          <p>Texty, knihy, projekty.</p>
+          <div class="refs" aria-label="Odkazy">
+            <a class="ref-link" href="https://adent.substack.com/" target="_blank" rel="me noopener noreferrer">
+              <span class="ref-kind">Newsletter</span>
+              <span class="ref-title">Adent</span>
+              <span class="ref-url">adent.substack.com</span>
+            </a>
+            <a class="ref-link" href="https://den1.cz/" target="_blank" rel="noopener noreferrer">
+              <span class="ref-kind">Projekt</span>
+              <span class="ref-title">Den 1</span>
+              <span class="ref-url">den1.cz</span>
+            </a>
+            <a class="ref-link" href="https://elektroniche.cz/" target="_blank" rel="noopener noreferrer">
+              <span class="ref-kind">Knihy</span>
+              <span class="ref-title">Elektroniche / knihy o elektronice</span>
+              <span class="ref-url">elektroniche.cz</span>
+            </a>
+            <a class="ref-link" href="https://x.com/adent" target="_blank" rel="me noopener noreferrer">
+              <span class="ref-kind">Sociální profil</span>
+              <span class="ref-title">X / @adent</span>
+              <span class="ref-url">x.com/adent</span>
+            </a>
+          </div>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <span>© Martin Malý</span>
+        <span>Text · software · AI · elektronika</span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

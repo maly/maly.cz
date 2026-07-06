@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 920 920" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:square;">
+    <rect x="0" y="0" width="920" height="920" style="fill:rgb(251,252,253);"/>
+    <path d="M14,20L40,20M14,20L14,46M906,20L880,20M906,20L906,46M14,900L40,900M14,900L14,874M906,900L880,900M906,900L906,874" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+    <path d="M30,82L890,82M30,790L890,790" style="fill:none;fill-rule:nonzero;stroke:rgb(152,163,174);stroke-width:1.25px;stroke-linecap:butt;stroke-dasharray:4,5;"/>
+    <g>
+        <path d="M88,80L88,740M168,80L168,740M248,80L248,740M328,80L328,740M408,80L408,740M488,80L488,740M568,80L568,740M648,80L648,740M728,80L728,740M808,80L808,740" style="fill-rule:nonzero;stroke:rgb(230,234,238);stroke-width:1px;stroke-linecap:butt;"/>
+        <path d="M88,140L808,140M88,230L808,230M88,320L808,320M88,410L808,410M88,500L808,500M88,590L808,590M88,680L808,680" style="fill-rule:nonzero;stroke:rgb(230,234,238);stroke-width:1px;stroke-linecap:butt;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,42,40)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">D<tspan x="11.708px 16.307px 27.133px 39.732px 51.44px 62.265px 75.747px 84.799px 93.851px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px ">IAGRAM_01</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,160,40)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">-<tspan x="5.482px 10.963px 16.445px 21.927px 27.409px 32.89px 38.372px 43.854px 49.336px 53.934px 58.533px 63.132px 67.731px 72.33px 76.929px 88.637px 99.463px 111.171px 121.098px 125.697px 134.437px 145.262px 149.861px 162.46px 174.168px 184.994px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">--------  /  IDENTITA.GRAF</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,708,40)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">V<tspan x="10.825px 21.651px 33.359px 42.411px 51.463px 56.062px 65.114px 69.713px 74.312px 79.794px 85.276px 90.757px 96.239px 101.721px 106.32px 110.919px 119.971px 129.023px 138.075px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">ER_1.0  -----  2026</tspan></text>
+    </g>
+    <g>
+        <g transform="matrix(1,0,0,1,80,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">0<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,160,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">1<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,240,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">2<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,320,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">3<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,400,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">4<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,480,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">5<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,560,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">6<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,640,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">7<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,720,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">8<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,800,72)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">9<tspan x="9.052px " y="0px ">0</tspan></text>
+        </g>
+        <g>
+            <path d="M88,78L88,90M168,78L168,90M248,78L248,90M328,78L328,90M408,78L408,90M488,78L488,90M568,78L568,90M648,78L648,90M728,78L728,90M808,78L808,90" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+            <path d="M82,84L94,84M162,84L174,84M242,84L254,84M322,84L334,84M402,84L414,84M482,84L494,84M562,84L574,84M642,84L654,84M722,84L734,84M802,84L814,84" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        </g>
+    </g>
+    <g>
+        <g transform="matrix(1,0,0,1,22,145)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">A</text>
+        </g>
+        <g transform="matrix(1,0,0,1,22,235)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">B</text>
+        </g>
+        <g transform="matrix(1,0,0,1,22,325)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">C</text>
+        </g>
+        <g transform="matrix(1,0,0,1,22,505)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">D</text>
+        </g>
+        <g transform="matrix(1,0,0,1,22,686)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">F</text>
+        </g>
+        <g transform="matrix(1,0,0,1,886,145)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">_<tspan x="9.052px 18.104px " y="0px 0px ">01</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,886,235)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">_<tspan x="9.052px 18.104px " y="0px 0px ">02</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,886,325)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">_<tspan x="9.052px 18.104px " y="0px 0px ">03</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,886,505)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">_<tspan x="9.052px 18.104px " y="0px 0px ">04</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,886,686)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">_<tspan x="9.052px 18.104px " y="0px 0px ">06</tspan></text>
+        </g>
+    </g>
+    <g>
+        <g transform="matrix(1,0,0,1,102,122)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">01</text>
+        </g>
+        <rect x="100" y="150" width="150" height="78" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,120,188)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">MÉDIA</text>
+        </g>
+        <g transform="matrix(1,0,0,1,120,208)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 17.351px 25.505px 30.104px 39.156px 48.208px " y="0px 0px 0px 0px 0px 0px 0px "> vstupy</tspan></text>
+        </g>
+        <rect x="244" y="180" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,102,302)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">02</text>
+        </g>
+        <rect x="100" y="330" width="150" height="78" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,120,368)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">SOFTW<tspan x="57.172px 67.844px " y="0px 0px ">AR</tspan>E</text>
+        </g>
+        <g transform="matrix(1,0,0,1,120,388)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 17.351px 25.505px 30.104px 39.156px 48.208px " y="0px 0px 0px 0px 0px 0px 0px "> vstupy</tspan></text>
+        </g>
+        <rect x="244" y="360" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,102,482)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">03</text>
+        </g>
+        <rect x="100" y="510" width="150" height="78" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,120,548)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">AI</text>
+        </g>
+        <g transform="matrix(1,0,0,1,120,568)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 17.351px 25.505px 30.104px 39.156px 48.208px " y="0px 0px 0px 0px 0px 0px 0px "> vstupy</tspan></text>
+        </g>
+        <rect x="244" y="540" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,102,662)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">04</text>
+        </g>
+        <rect x="100" y="690" width="150" height="78" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,113,728)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">ELEKTRONIKA</text>
+        </g>
+        <g transform="matrix(1,0,0,1,120,748)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 17.351px 25.505px 30.104px 39.156px 48.208px " y="0px 0px 0px 0px 0px 0px 0px "> vstupy</tspan></text>
+        </g>
+        <rect x="244" y="720" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,396,316)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">10</text>
+    </g>
+    <rect x="372" y="344" width="196" height="178" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    <g transform="matrix(1,0,0,1,396,364.628)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">TEXT<tspan x="40.602px 45.047px " y="0px 0px "> /</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,396,390.852)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">KÓD /</text>
+    </g>
+    <g transform="matrix(1,0,0,1,396,415.73)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">ELEKTRONIKA</text>
+    </g>
+    <g transform="matrix(1,0,0,1,0,-57.0099)">
+        <path d="M395,486L545,486" style="fill:none;fill-rule:nonzero;stroke:rgb(152,163,174);stroke-width:1.25px;stroke-linecap:butt;stroke-dasharray:4,5;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,396,458.163)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(51,64,75);">čtu</text>
+    </g>
+    <g transform="matrix(1,0,0,1,396,479.163)">
+        <g transform="matrix(16,0,0,16,59.5703,0)">
+        </g>
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(51,64,75);">zkouším</text>
+    </g>
+    <g transform="matrix(1,0,0,1,396,500.163)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(51,64,75);">píšu / stavím</text>
+    </g>
+    <rect x="562" y="426" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    <g transform="matrix(1,0,0,1,25,-5.85202)">
+        <rect x="342" y="426" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,688.762,179.63)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">20</text>
+    </g>
+    <g transform="matrix(1,0,0,1,713.62,179.63)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 18.25px 23.732px 32.784px 40.937px 49.989px " y="0px 0px 0px 0px 0px 0px 0px "> proces</tspan></text>
+    </g>
+    <rect x="642" y="248" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    <rect x="642" y="338" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    <g transform="matrix(1,0,0,1,0,-1.88775)">
+        <rect x="642" y="428" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    </g>
+    <rect x="642" y="518" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+    <g transform="matrix(1,0,0,1,688,222)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">2<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.1</tspan></text>
+    </g>
+    <rect x="700" y="232" width="112" height="44" style="fill:white;stroke:rgb(126,136,147);stroke-width:1.5px;stroke-linecap:butt;stroke-dasharray:5,5;"/>
+    <g transform="matrix(1,0,0,1,724,259)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">rozebrat</text>
+    </g>
+    <g transform="matrix(1,0,0,1,688,312)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">2<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.2</tspan></text>
+    </g>
+    <rect x="700" y="322" width="112" height="44" style="fill:white;stroke:rgb(126,136,147);stroke-width:1.5px;stroke-linecap:butt;stroke-dasharray:5,5;"/>
+    <g transform="matrix(1,0,0,1,730,349)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">vyzkoušet</text>
+    </g>
+    <g transform="matrix(1,0,0,1,688,402)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">2<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.3</tspan></text>
+    </g>
+    <rect x="700" y="412" width="112" height="44" style="fill:white;stroke:rgb(126,136,147);stroke-width:1.5px;stroke-linecap:butt;stroke-dasharray:5,5;"/>
+    <g transform="matrix(1,0,0,1,730,439)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">popsat</text>
+    </g>
+    <g transform="matrix(1,0,0,1,688,492)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">2<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.4</tspan></text>
+    </g>
+    <rect x="700" y="502" width="112" height="44" style="fill:white;stroke:rgb(126,136,147);stroke-width:1.5px;stroke-linecap:butt;stroke-dasharray:5,5;"/>
+    <g transform="matrix(1,0,0,1,724,529)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">spustit</text>
+    </g>
+    <g transform="matrix(1,0,0,1,292,806.609)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">30</text>
+    </g>
+    <g transform="matrix(1,0,0,1,427.89,844.694)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">/<tspan x="4.599px 9.198px 17.351px 25.505px 33.659px 38.258px 47.31px 56.362px " y="0px 0px 0px 0px 0px 0px 0px 0px "> výstupy</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,412,806.609)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">3<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.1</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,-10.1392,-92.636)">
+        <rect x="405" y="816" width="96" height="46" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,435,844)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">článek</text>
+        </g>
+        <rect x="448" y="778" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <rect x="536" y="816" width="96" height="46" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,572,844)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">kniha</text>
+        </g>
+        <rect x="579" y="778" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <rect x="667" y="816" width="96" height="46" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,691,844)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">prototyp</text>
+        </g>
+        <rect x="710" y="778" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <rect x="798" y="816" width="96" height="46" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <g transform="matrix(1,0,0,1,826,844)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">nástroj</text>
+        </g>
+        <rect x="841" y="778" width="10" height="10" style="fill:white;stroke:rgb(21,24,28);stroke-width:2px;stroke-linecap:butt;"/>
+        <path d="M453,778L453,816M584,778L584,816M715,778L715,816M846,778L846,816" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,543,806.609)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">3<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.2</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,674,806.609)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">3<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.3</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,805,806.609)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">3<tspan x="9.052px 18.104px 22.703px " y="0px 0px 0px ">0.4</tspan></text>
+    </g>
+    <g>
+        <path d="M254,185L300,185L300,426L342,426" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <path d="M254,365L288,365L288,426L342,426" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <path d="M254,545L276,545L276,426L342,426" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <path d="M254,725L300,725L300,426L367,426" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <path d="M572,431L642,431" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <path d="M648,253L680,253M648,343L680,343M647.811,431.112L679.811,431.112M648,523L680,523" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <g transform="matrix(1,0,0,0.834304,0,41.921)">
+            <path d="M648,253L648,778L835.861,777.226L442.861,777.226" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        </g>
+    </g>
+    <g transform="matrix(1,0,0,1,42,826)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(21,24,28);">P<tspan x="10.825px 22.534px 33.359px 45.068px 57.666px 68.492px 80.2px 84.799px 89.398px 102.88px 113.705px 123.343px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">RACOVNÍ MAPA</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,42,848)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">v<tspan x="8.154px 16.307px 20.906px 29.958px 39.01px 47.164px 51.763px 57.244px 66.742px 71.341px 80.393px 89.445px 97.598px 106.65px 114.804px 119.403px 124.885px 134.382px 138.981px 147.135px 155.288px 163.442px 167.15px 176.202px 185.254px 194.306px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">stupy -&gt; pokus -&gt; výsledek</tspan></text>
+    </g>
+    <g transform="matrix(1,0,0,1,42,868)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(85,96,107);">p<tspan x="9.052px 18.104px 26.258px 35.31px 44.362px 57.843px 65.997px 74.151px 78.75px 83.348px 87.947px 92.546px 101.598px 109.752px 114.351px 122.504px 127.103px 131.702px 136.301px 140.01px 144.608px 153.66px 159.142px 168.194px 176.348px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">oznámky / testy / iterace</tspan></text>
+    </g>
+    <g transform="matrix(0.418145,0,0,1,276.986,2.34375)">
+        <path d="M220,830L220,874M620,830L620,874" style="fill:none;fill-rule:nonzero;stroke:rgb(152,163,174);stroke-width:1.25px;stroke-linecap:butt;stroke-dasharray:4,5;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,62.2182,0)">
+        <g transform="matrix(1,0,0,1,548.72,831.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">MĚŘÍTKO</text>
+        </g>
+        <g transform="matrix(1,0,0,1,656.72,831.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">: 1:1</text>
+        </g>
+        <g transform="matrix(1,0,0,1,548.72,851.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">MŘÍŽKA</text>
+        </g>
+        <g transform="matrix(1,0,0,1,656.72,851.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">: 10x10</text>
+        </g>
+        <g transform="matrix(1,0,0,1,548.72,871.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">JEDNOTKA</text>
+        </g>
+        <g transform="matrix(1,0,0,1,656.72,871.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">: poznámka</text>
+        </g>
+        <g transform="matrix(1,0,0,1,548.72,891.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">ST<tspan x="19.258px " y="0px ">A</tspan>V</text>
+        </g>
+        <g transform="matrix(1,0,0,1,656.72,891.418)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:16px;fill:rgb(45,53,61);">: otevřeno</text>
+        </g>
+    </g>
+    <g>
+        <path d="M844,846L862,846M853,837L853,855" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-width:2px;"/>
+        <g transform="matrix(1,0,0,1,99,11.7899)">
+            <path d="M306,850L416,850M306,858L416,858" style="fill:none;fill-rule:nonzero;stroke:rgb(21,24,28);stroke-opacity:0.3;stroke-width:2px;"/>
+        </g>
+    </g>
+</svg>
