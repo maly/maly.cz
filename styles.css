@@ -92,7 +92,7 @@
     }
 
     .hero-copy::before {
-      content: "01 / PROFILE";
+      content: "01 / PROFIL";
       position: absolute;
       top: 0;
       left: clamp(26px, 4vw, 48px);
