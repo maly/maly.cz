@@ -1655,7 +1655,10 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     world.dirty = true;
   }
   function stepRope(R, h, push) {
-    const px = push && ptr.on ? ptr.x + scrollX : -1e5, py = push && ptr.on ? ptr.y + scrollY : -1e5;
+    let px = push && ptr.on ? ptr.x + scrollX : -1e5, py = push && ptr.on ? ptr.y + scrollY : -1e5;
+    // u volného konce kurzor lano neodtlačuje, jinak by hrot uskakoval a nešel chytit
+    const e0 = R.q[0], e1 = R.q[R.q.length - 1];
+    for (const v of [e0, e1]) if ((!v.pin || v.pin === SOCK) && Math.hypot(v.x - px, v.y - py) < 34) { px = py = -1e5; break; }
     const bottom = world.box.t + world.box.h + 40, g = GR * h * h;
     let mv = 0, low = true;
     for (const v of R.q) {
