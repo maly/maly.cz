@@ -3033,9 +3033,11 @@ html.pnk-turning .pnk-ply{display:block}
   function setTurn(a) {
     turn.a = a = clamp(a, 0, 180);
     const page = doc.querySelector('.page'), W = innerWidth, H = innerHeight, y0 = scrollY, h = PLY / 2;
-    const base = `perspective(${PERSP}px) translateZ(${-h}px) rotateY(${(-a).toFixed(2)}deg)`;
-    const clip = `inset(${y0}px 0 ${Math.max(0, root.scrollHeight - y0 - H)}px 0)`;
-    for (const e of [page, layer]) Object.assign(e.style, { transformOrigin: `${W / 2}px ${y0 + H / 2}px`, transform: `${base} translateZ(${h}px)`, clipPath: clip, backfaceVisibility: 'hidden', webkitBackfaceVisibility: 'hidden' });
+    // deska se přisouvá k divákovi: vzdálený okraj zůstává v rovině stránky, přilehlý se zvedá a roste
+    const lift = W / 2 * Math.sin(rad(a)), P = Math.max(PERSP, W * 2.2);
+    const base = `perspective(${P.toFixed(0)}px) translateZ(${(lift - h).toFixed(1)}px) rotateY(${(-a).toFixed(2)}deg)`;
+    for (const e of [page, layer]) Object.assign(e.style, { transformOrigin: `${W / 2}px ${y0 + H / 2}px`, transform: `${base} translateZ(${h}px)`,
+      clipPath: `inset(${y0}px 0 ${Math.max(0, e.offsetHeight - y0 - H)}px 0)`, backfaceVisibility: 'hidden', webkitBackfaceVisibility: 'hidden' });
     Object.assign(turn.shadeF.style, { top: y0 + 'px', height: H + 'px' });
     Object.assign(rub.style, { transformOrigin: '50% 50%', transform: `${base} translateZ(${-h}px) rotateY(180deg)` });
     turn.ply.style.visibility = a > 6 && a < 174 ? 'visible' : 'hidden';
