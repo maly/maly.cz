@@ -2203,6 +2203,7 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
   const pl = { half: {}, state: 'hook', x: 0, y: 0, a: 0, vis: false, el: null, fk: null, fr: 0, cuts: [], fallen: [] };
   // Co se objeví v díře po odštípnutém štítku: [text, odkaz]. Štítky bez záznamu nechají prázdnou díru.
   const UZEMI = {
+    'Média': ['Newsletter', 'https://adent.substack.com/'],
     'Odborné knihy': ['elektroniche.cz', 'https://elektroniche.cz/'],
     'Mikroelektronika': ['elektroniche.cz', 'https://elektroniche.cz/'],
     'Retrocomputing': ['elektroniche.cz', 'https://elektroniche.cz/'],
@@ -2538,21 +2539,22 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
   const NOTES = [
     ['Kdo je vepředu', 'Píše, programuje a rozebírá věci, aby zjistil, jak fungují. Pak o tom napíše knihu.'],
     ['Stručnost', 'Chce odpovědi na jednu až dvě věty. Tahle poznámka je už teď moc dlouhá.'],
-    ['Čeština', 'Anglicismy mi škrtá. Na líci má přitom v oddílu Dělám slovo „workflow". Neříkat mu to.'],
+    ['Čeština', 'Anglicismy mi škrtá. Na líci má přitom v oddílu Dělám slovo „workflow". Neříkat mu to, nebo si toho všimne.'],
     ['Pomlčky', 'Dlouhé pomlčky nesnese. Píšu čárky a dělám, že mi to nevadí.'],
-    ['Nejdřív mluvit', 'Kód až po dohodě. Když začnu programovat dřív, pozná to.'],
-    ['Osm bitů', 'Z80, 8080, 6502, 6809. ASM80 je jeho assembler v prohlížeči, Osma jeho jazyk pro osmibity. Emulátor Z80 si napsal v JavaScriptu.'],
-    ['Starquake', 'Předělává hru ze ZX Spectra z roku 1985. Věrně, včetně mapy. A k tomu chystá knihu o hrách na Spectrum.'],
+    ['Nejdřív mluvit', 'Kód až po dohodě. Když začnu programovat dřív, pozná to a zuří.'],
+    ['Osm bitů', 'Z80, 8080, 6502, 6809. ASM80 je jeho assembler v prohlížeči, Osma jeho jazyk pro osmibity. Emulátor starých procesorů si napsal v JavaScriptu.'],
+    ['Starquake', 'Předělává hry ze ZX Spectra z roku 1985. Věrně, včetně mapy. A k tomu chystá knihu o hrách na Spectrum.'],
     ['Dráty', 'ESP32, Micro:bit, klávesnice z počítače Ondra. FORTH na mikrokontroléru zkusil taky.'],
-    ['Doma', 'Někde u Týnce nad Sázavou běží domácí server a Raspberry Pi, které poslouchá letadla a meteorologické sondy.'],
-    ['Stroje', 'iPhone, MacBook Air s M1 a pracovní stanice s Windows. S tou poslední jsme si užili nejvíc.'],
+    ['Doma', 'Někde na kopci nad Sázavou běží domácí servery a Raspberry Pi, které poslouchá letadla a meteorologické sondy. A Meshcore a TinyGS'],
+    ['Stroje', 'iPhone, MacBook Air s M1, miniservery na Linuxu a pracovní stanice s Windows. S tou poslední jsme si užili nejvíc.'],
     ['Agenti', 'Nechává agenty, aby si navzájem kontrolovali práci, a chce jim k tomu dát moderátora. Dokumentaci drží ve Stratě, abych si ji nemusel pamatovat sám.'],
     ['Dovednosti', 'Staví mi je do zásoby: featuremaker, ideamaker, první principy s povinným oponentem.'],
-    ['Lokální modely', 'Počítal, jestli se vyplatí vlastní železo. Vyšlo mu, že zatím ne. Území na líci si přesto nechal.'],
-    ['Slovobraní', 'Napsal si řešitel slovní hry, který dorovnává denní rekordy. Hrát poctivě ho zjevně nebavilo.'],
+    ['Lokální modely', 'Počítal, jestli se vyplatí vlastní železo. Vyšlo mu, že zatím ne. Území na líci si přesto nechal. Mám se bát?'],
+    ['Slovobraní', 'Napsal si řešitele slovní hry, který dorovnává denní rekordy. Hrát poctivě ho zjevně nebavilo.'],
     ['made4fun', 'Staví katalog věcí, které si lidé udělali pro radost. Tenhle web by tam patřil.'],
     ['Satira', 'Píše glosy. Lehce a kousavě. Tady vzadu se snažím nebýt jejich námětem.'],
-    ['Růže', 'Pěstuje růže. Jediná věc v téhle složce, která nejde přeložit ani spustit.'],
+    ['Růže', 'Pěstuje na zahradě růže. Jediná věc v téhle složce, která nejde přeložit ani spustit.'],
+    ['Dílna', 'Tam za ním nemůžu. Ne že bych nechtěl. Bůhví, co tam dělá.'],
     ['Tenhle web', 'Chtěl web jako hru. Dostal panáčka, který mu krade šroubovák. Ve tři ráno napsal: jeď a programuj.'],
   ];
 
