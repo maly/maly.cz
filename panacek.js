@@ -4197,6 +4197,10 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
   }
   function listen() {
     const seen = () => { lastActivity = performance.now(); };
+    // Zvuk se zapíná a probouzí úplně prvním posluchačem každého gesta, dřív než ho cokoli zachytí.
+    // Safari ho po přepnutí karty uspí a probudit ho jde jen uvnitř gesta.
+    const wake = () => { unlock(); const c = audio.ctx; if (c && c.state !== 'running' && !audio.mute) try { c.resume().catch(() => {}); } catch (e) { /* nic */ } };
+    for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, wake, { capture: true, passive: true });
     addEventListener('pointerdown', () => { swallow = 0; }, true);   // nové stisknutí: staré spolknutí už neplatí
     // za čepici jde panáčka chytit, to má přednost i před nástroji
     addEventListener('pointerdown', e => {
