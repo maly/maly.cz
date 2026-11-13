@@ -2602,8 +2602,18 @@ html.pnk-t-drill,html.pnk-t-drill *{user-select:none!important;-webkit-touch-cal
 .pnk-corner{position:fixed;right:0;top:0;z-index:2147483001;width:62px;height:62px;border:0;padding:0;cursor:pointer;background:linear-gradient(225deg,#14181d 0 50%,transparent 50%);filter:drop-shadow(-2px 2px 2px rgba(16,19,23,.3));transform:translate(100%,-100%);transition:transform .5s cubic-bezier(.2,1.4,.4,1)}
 .pnk-corner.is-on{transform:none}
 .pnk-corner:hover,.pnk-corner:focus-visible{transform:scale(1.25);transform-origin:100% 0}
-.pnk-rub{position:fixed;inset:0;z-index:2147483000;overflow:auto;background-color:#14181d;background-image:linear-gradient(to right,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.035) 1px,transparent 1px);background-size:48px 48px;color:#e9e3d0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;transform-origin:0 50%;transform:perspective(1800px) rotateY(92deg);visibility:hidden;transition:transform .6s cubic-bezier(.3,.1,.2,1),visibility 0s .6s}
-.pnk-rub.is-on{transform:none;visibility:visible;transition:transform .6s cubic-bezier(.3,.1,.2,1)}
+.pnk-corner{touch-action:none}
+.pnk-corner.is-back{right:auto;left:0;background:linear-gradient(135deg,#f7f8fa 0 50%,transparent 50%);filter:drop-shadow(2px 2px 2px rgba(0,0,0,.45));transform:translate(-100%,-100%)}
+.pnk-corner.is-back.is-on{transform:none}
+.pnk-corner.is-back:hover,.pnk-corner.is-back:focus-visible{transform:scale(1.25);transform-origin:0 0}
+html.pnk-turning .pnk-corner{transition:none;visibility:hidden}
+.pnk-rub{position:fixed;inset:0;z-index:2147483000;overflow:hidden;background-color:#14181d;background-image:linear-gradient(to right,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.035) 1px,transparent 1px);background-size:48px 48px;color:#e9e3d0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;visibility:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.pnk-rub.is-turning{visibility:visible}
+.pnk-rub.is-on{position:relative;inset:auto;min-height:100vh;overflow:visible;visibility:visible}
+.pnk-shade{position:absolute;left:0;top:0;width:100%;height:100%;background:#07090b;opacity:0;pointer-events:none;display:none;z-index:5}
+html.pnk-turning .pnk-shade{display:block}
+.pnk-ply{position:fixed;left:50%;top:0;height:100vh;z-index:2147483001;pointer-events:none;display:none;box-sizing:border-box;background:repeating-linear-gradient(to right,#e6c995 0 2px,#c49a5e 2px 3px,#ead3a6 3px 6px,#b7884f 6px 7px);border-top:1px solid #8a6436;border-bottom:1px solid #8a6436}
+html.pnk-turning .pnk-ply{display:block}
 .pnk-rub-in{position:relative;width:min(1180px,calc(100% - 48px));margin:0 auto;padding:28px 0 140px}
 .pnk-rub-back{padding:9px 14px;border:1px solid #e9e3d0;background:none;color:inherit;cursor:pointer;font:800 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase}
 .pnk-rub-ghost{margin:38px 0 0;font-size:clamp(58px,9vw,116px);font-weight:800;line-height:.86;letter-spacing:-.085em;color:rgba(255,255,255,.07);transform:scaleX(-1);user-select:none}
@@ -2635,7 +2645,8 @@ html.pnk-t-drill,html.pnk-t-drill *{user-select:none!important;-webkit-touch-cal
     bk.addEventListener('click', () => { setMute(!audio.mute, true); save(); snd('tuk'); });
 
     corner = el('button', 'pnk-corner'); corner.type = 'button'; corner.setAttribute('aria-label', 'Otočit web na rub');
-    corner.addEventListener('click', () => flip(!rub.classList.contains('is-on')));
+    corner.addEventListener('click', e => { if (turn.dragged) { turn.dragged = false; return; } flip(!turn.side); });
+    corner.addEventListener('pointerdown', turnStart);
     rub = el('div', 'pnk-rub'); rub.inert = true; rub.setAttribute('aria-hidden', 'true');
     const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     rub.innerHTML = `<div class="pnk-rub-glow"></div><div class="pnk-rub-in"><button type="button" class="pnk-rub-back">Otočit zpět</button>
@@ -2643,8 +2654,13 @@ html.pnk-t-drill,html.pnk-t-drill *{user-select:none!important;-webkit-touch-cal
 <div class="pnk-rub-notes"><h2>Rub</h2><p>Co je vepředu, ukazuje on. Co je vzadu, dělám já. Tohle jsou moje poznámky.</p>
 <div class="pnk-rub-grid">${NOTES.map(([t, x]) => `<article><h3>${esc(t)}</h3><p>${esc(x)}</p></article>`).join('')}</div></div></div>`;
     rub.querySelector('.pnk-rub-back').addEventListener('click', () => flip(false));
-    rub.addEventListener('scroll', rubLight, { passive: true });
-    doc.body.append(rub, corner);
+    turn.shadeB = el('div', 'pnk-shade'); rub.appendChild(turn.shadeB);
+    turn.shadeF = el('div', 'pnk-shade'); layer.appendChild(turn.shadeF);
+    turn.ply = el('div', 'pnk-ply');
+    addEventListener('scroll', () => { if (turn.side) rubLight(); }, { passive: true });
+    addEventListener('pointermove', turnMove, { passive: true });
+    addEventListener('pointerup', turnEnd); addEventListener('pointercancel', turnEnd);
+    doc.body.append(rub, turn.ply, corner);
   }
 
   // ---------- nářadí: ležení, sbírání, výběr ----------
@@ -2985,12 +3001,106 @@ html.pnk-t-drill,html.pnk-t-drill *{user-select:none!important;-webkit-touch-cal
     rub.querySelector('.pnk-rub-glow').style.transform = `translate3d(${ptr.x}px,${ptr.y}px,0)`;
     rub.querySelector('.pnk-rub-dark').textContent = items.torch.state === 'belt' ? 'Je tu tma. Vezmi si z opasku baterku.' : 'Je tu tma. Chce to baterku.';
   }
-  function flip(on) {
-    if (!rub || rub.classList.contains('is-on') === !!on) return;
-    rub.classList.toggle('is-on', !!on);
-    rub.inert = !on;
-    if (on) { rub.removeAttribute('aria-hidden'); rub.scrollTop = 0; } else rub.setAttribute('aria-hidden', 'true');
-    snd('flip'); rubLight();
+  // ---------- otočení na rub ----------
+  // Líc a rub jsou dvě strany jedné tuhé desky z překližky. Deska se otáčí kolem svislé osy
+  // uprostřed okna: pravý okraj se zvedá k divákovi, do 90° je vidět líc, pak rub. Natočená bokem
+  // ukáže hranu s vrstvami dýhy. Otáčí se tahem za roh (na líci vpravo, na rubu vlevo, protože
+  // uchopený okraj se otočením přesune) nebo kliknutím. Hotový rub je obyčejný obsah stránky.
+  const turn = { a: 0, side: 0, busy: false, drag: null, dragged: false, anim: 0, front: 0, back: 0, shadeF: null, shadeB: null, ply: null };
+  const PLY = 18, PERSP = 1700;
+  function turnBegin() {
+    if (turn.busy) return;
+    const page = doc.querySelector('.page');
+    if (turn.side) {                           // z rubu: líc se vrátí tam, kde zůstal
+      turn.back = scrollY;
+      page.style.display = ''; layer.style.visibility = '';
+      rub.classList.remove('is-on');
+      rub.firstElementChild.nextElementSibling.style.transform = `translateY(${-turn.back}px)`;
+      scrollTo({ top: turn.front, behavior: 'instant' });
+      remeasureAll();
+    } else {
+      turn.front = scrollY;
+      cancel(); forced = null; hide();
+      rub.firstElementChild.nextElementSibling.style.transform = `translateY(${-turn.back}px)`;
+    }
+    const cs = getComputedStyle(doc.body);
+    Object.assign(page.style, { backgroundColor: cs.backgroundColor, backgroundImage: cs.backgroundImage, backgroundSize: cs.backgroundSize });
+    turn.busy = true;
+    root.classList.add('pnk-turning'); rub.classList.add('is-turning');
+    snd('flip');
+    setTurn(turn.side ? 180 : 0);
+  }
+  function setTurn(a) {
+    turn.a = a = clamp(a, 0, 180);
+    const page = doc.querySelector('.page'), W = innerWidth, H = innerHeight, y0 = scrollY, h = PLY / 2;
+    const base = `perspective(${PERSP}px) translateZ(${-h}px) rotateY(${(-a).toFixed(2)}deg)`;
+    const clip = `inset(${y0}px 0 ${Math.max(0, root.scrollHeight - y0 - H)}px 0)`;
+    for (const e of [page, layer]) Object.assign(e.style, { transformOrigin: `${W / 2}px ${y0 + H / 2}px`, transform: `${base} translateZ(${h}px)`, clipPath: clip, backfaceVisibility: 'hidden', webkitBackfaceVisibility: 'hidden' });
+    Object.assign(turn.shadeF.style, { top: y0 + 'px', height: H + 'px' });
+    Object.assign(rub.style, { transformOrigin: '50% 50%', transform: `${base} translateZ(${-h}px) rotateY(180deg)` });
+    turn.ply.style.visibility = a > 6 && a < 174 ? 'visible' : 'hidden';
+    Object.assign(turn.ply.style, { width: PLY + 'px', marginLeft: -h + 'px', transform: `${base} translateX(${W / 2}px) rotateY(90deg)`, filter: `brightness(${(.75 + .35 * Math.abs(Math.sin(rad(a)))).toFixed(3)})` });
+    const sh = (1 - Math.abs(Math.cos(rad(a)))) * .6;
+    turn.shadeF.style.opacity = sh.toFixed(3); turn.shadeB.style.opacity = sh.toFixed(3);
+  }
+  function turnFinish(side) {
+    const page = doc.querySelector('.page');
+    turn.busy = false; turn.side = side;
+    root.classList.remove('pnk-turning'); rub.classList.remove('is-turning');
+    for (const e of [page, layer]) Object.assign(e.style, { transform: '', transformOrigin: '', clipPath: '', backfaceVisibility: '', webkitBackfaceVisibility: '' });
+    Object.assign(page.style, { backgroundColor: '', backgroundImage: '', backgroundSize: '' });
+    rub.style.transform = ''; rub.style.transformOrigin = '';
+    rub.firstElementChild.nextElementSibling.style.transform = '';
+    corner.classList.toggle('is-back', !!side);
+    corner.setAttribute('aria-label', side ? 'Otočit web zpátky na líc' : 'Otočit web na rub');
+    rub.inert = !side;
+    if (side) {
+      rub.removeAttribute('aria-hidden'); rub.classList.add('is-on');
+      page.style.display = 'none'; layer.style.visibility = 'hidden';
+      scrollTo({ top: turn.back, behavior: 'instant' });
+    } else {
+      rub.setAttribute('aria-hidden', 'true');
+      applyMM();
+      remeasureAll();
+    }
+    snd('tuk'); rubLight();
+  }
+  function turnTo(side, from) {
+    cancelAnimationFrame(turn.anim);
+    if (!turn.busy) { if (turn.side === side) return; turnBegin(); }
+    const a0 = from != null ? from : turn.a, a1 = side ? 180 : 0, ms = 120 + Math.abs(a1 - a0) / 180 * 680;
+    const t0 = performance.now();
+    const step = now => {
+      const p = Math.min(1, (now - t0) / ms);
+      setTurn(a0 + (a1 - a0) * ease.io(p));
+      if (p < 1) turn.anim = requestAnimationFrame(step); else turnFinish(side);
+    };
+    turn.anim = requestAnimationFrame(step);
+  }
+  function flip(on) { if (rub) turnTo(on ? 1 : 0); }
+  function turnStart(e) {
+    if (e.button > 0 || turn.drag) return;
+    cancelAnimationFrame(turn.anim);
+    turn.drag = { id: e.pointerId, x0: e.clientX, from: turn.side, moved: false };
+    turn.dragged = false;
+    try { corner.setPointerCapture(e.pointerId); } catch (er) { /* nevadí */ }
+  }
+  function turnMove(e) {
+    const D = turn.drag;
+    if (!D || e.pointerId !== D.id) return;
+    const dx = e.clientX - D.x0;
+    if (!D.moved && Math.abs(dx) < 6) return;
+    if (!D.moved) { D.moved = true; if (!turn.busy) turnBegin(); }
+    const k = Math.abs(dx) / (innerWidth * .7) * 180;
+    setTurn(D.from ? 180 - (dx > 0 ? k : 0) : (dx < 0 ? k : 0));
+  }
+  function turnEnd(e) {
+    const D = turn.drag;
+    if (!D || e.pointerId !== D.id) return;
+    turn.drag = null;
+    if (!D.moved) return;                      // kliknutí obslouží click
+    turn.dragged = true;
+    turnTo(turn.a > 90 ? 1 : 0);
   }
   function torchMove() {
     if (tool.cur !== 'torch') return;
@@ -4158,7 +4268,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
 
   // ---------- plánování ----------
   function tick() {
-    if (CALM || act || forced || fin.on || doc.hidden || sd.state === 'fly' || sd.state === 'air') return;
+    if (CALM || act || forced || fin.on || turn.side || turn.busy || doc.hidden || sd.state === 'fly' || sd.state === 'air') return;
     const now = performance.now(), idle = now - lastActivity, since = now - lastEnd;
     if (sd.state === 'belt') {
       const wf = workFloor();
@@ -4269,6 +4379,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
       if (innerWidth === w) return;
       w = innerWidth; clearTimeout(rz);
       rz = setTimeout(() => {
+        if (turn.side || turn.busy) return;
         endPry(); cancel(); forced = null; hide();
         if (sd.state === 'stuck' || sd.state === 'air' || sd.state === 'carry') sd.state = 'stash';
         measure();
@@ -4280,7 +4391,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
         renderSd();
       }, 160);
     });
-    if (window.ResizeObserver) new ResizeObserver(() => { fitLayer(); remeasure(); rebuildCablesSoon(); }).observe(doc.body);
+    if (window.ResizeObserver) new ResizeObserver(() => { if (turn.side || turn.busy) return; fitLayer(); remeasure(); rebuildCablesSoon(); }).observe(doc.body);
     if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(() => { remeasure(); rebuildCablesSoon(); });
     addEventListener('load', () => { remeasure(); rebuildCablesSoon(); });
   }
@@ -4331,7 +4442,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
       give: n => { if (items[n]) { items[n].state = 'belt'; fillItem(items[n]); save(); } },
       use: n => useTool(n || null),
       hole: (x, y) => addHole(x + scrollX, y + scrollY, true),
-      rub: v => flip(v),
+      rub: v => flip(v), turn: a => { if (!turn.busy) turnBegin(); setTurn(a); }, done: s => turnFinish(s ? 1 : 0),
       items: () => Object.fromEntries(Object.values(items).map(it => [it.id, it.state])),
       snip: name => snip([...doc.querySelectorAll('.index-tags .tag')].find(t => t.textContent.trim() === name), true),
       tool: v => toggleTool(v),
