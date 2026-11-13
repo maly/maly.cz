@@ -3936,6 +3936,7 @@ html.pnk-t-iron .pnk-ref.is-off,html.pnk-t-iron .item.is-cut,html.pnk-t-iron .pn
       e.appendChild(we);
     }
     h1.el = e;
+    kernH1();
     const style = pstyle();
     style.textContent = `
 .pnk-word{white-space:nowrap}
@@ -3976,6 +3977,15 @@ html.pnk-t-iron .pnk-h1{outline:2px dashed #f2b705;outline-offset:4px}
     s.el.classList.toggle('is-empty', ch == null);
     s.el.classList.toggle('is-wrong', ch != null && ch !== s.orig);
     s.el.classList.remove('is-loose');
+    kernH1();
+  }
+  // Dvojice, které se v tučném řezu slévají, dostanou trochu vzduchu navíc (i po přeházení písmen).
+  const KERN = { rt: .045, rf: .04, ry: .02 };
+  function kernH1() {
+    h1.slots.forEach((s, i) => {
+      const n = h1.slots[i + 1], pair = (s.el.textContent + (n && n.el.parentElement === s.el.parentElement ? n.el.textContent : '')).toLowerCase();
+      s.el.style.marginRight = KERN[pair] ? KERN[pair] + 'em' : '';
+    });
   }
   function letterFont(L) {
     const cs = getComputedStyle(h1.el);
