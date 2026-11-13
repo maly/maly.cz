@@ -1418,10 +1418,10 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     ],
     knihyUrl: 'https://elektroniche.cz/',
     vzkazy: [
+      ['Práce', 'Jasně.cz', 'https://jasne.cz/'],
+      ['Nová hračka', 'made4fun', 'https://made4fun.eu/'],
       ['Newsletter', 'Adent', 'https://adent.substack.com/'],
-      ['Glosy', 'Den 1', 'https://den1.cz/'],
-      ['Knihy', 'Elektroniche', 'https://elektroniche.cz/'],
-      ['Kontakt', 'X / @adent', 'https://x.com/adent'],
+      ['Archiv textů', 'Den 1', 'https://den1.cz/'],
     ],
   };
 
@@ -2748,7 +2748,7 @@ html.pnk-turning .pnk-ply{display:block}
   function brokenParts() {
     const lw = lead.words.length || 1;
     return [
-      [world.removed.length, 14], [pl.cuts.length, 9], [Math.min(holes.length, 6), 6], [secCount(), 9],
+      [world.removed.length, 14], [pl.cuts.length, 9], [Math.min(holes.length, 6), 6], [secCount(), 2 + (secEl.items.length || 3) + (secEl.links.length || 4)],
       [h1.slots.filter(s => s.cur !== s.orig).length, h1.slots.length || 1],
       [mm.L ? 2 : mm.out > 0 ? 1 : 0, 2], [Math.round(6 * lead.words.filter(w => w.gone).length / lw), 6], [fig.novisor ? 1 : 0, 1],
     ];
@@ -3554,7 +3554,7 @@ html.pnk-turning .pnk-ply{display:block}
   const VERBS = [['spustit', 'drill'], ['použít', 'pl'], ['rozebrat', 'sd'], ['napsat si poznámky', 'iron'], ['zjistit, kde jsou hranice', 'torch']];
   // Co je v šuplících. Zatím panáčkovy věci; sem patří tvoje podrobnosti k jednotlivým řádkům.
   const SUPLIKY = ['Rozepsaný titulek: „Panáček ukradl šroubovák." Škrtnuto.', '// TODO: vrátit šroubovák\n// TODO: neusínat ve službě', 'Svačina. Nesahat.'];
-  const SVETLO = ['Kdo je vepředu', 'Satira', 'Osm bitů', 'Stručnost'];   // která poznámka z rubu patří ke kterému odkazu
+  const SVETLO = ['Agenti', 'made4fun', 'Čeština', 'Satira', 'Osm bitů', 'Kdo je vepředu', 'Stručnost'];   // která poznámka z rubu patří ke kterému odkazu
   const secEl = { h2: null, verbs: [], items: [], links: [], tip: null };
   const curTool = () => (tool.on ? 'sd' : tool.pl ? 'pl' : tool.cur);
 
