@@ -3936,10 +3936,12 @@ html.pnk-t-iron .pnk-ref.is-off,html.pnk-t-iron .item.is-cut,html.pnk-t-iron .pn
       e.appendChild(we);
     }
     h1.el = e;
+    kernH1();
     const style = pstyle();
     style.textContent = `
-.pnk-word{display:inline-block;white-space:nowrap}
-.pnk-ch{display:inline-block;transform-origin:50% 92%;transition:transform .25s}
+.pnk-word{white-space:nowrap}
+.pnk-ch{transform-origin:50% 92%;transition:transform .25s}
+.pnk-ch.is-loose,html.pnk-tool .pnk-ch:hover{display:inline-block}
 .pnk-ch.is-empty{color:transparent;outline:2px dashed rgba(16,19,23,.2);outline-offset:-.12em}
 .pnk-ch.is-loose{transform:rotate(-7deg) translateY(-.04em);animation:pnk-loose .5s ease-out}
 @keyframes pnk-loose{25%{transform:rotate(-13deg)}55%{transform:rotate(-4deg)}}
@@ -3975,6 +3977,15 @@ html.pnk-t-iron .pnk-h1{outline:2px dashed #f2b705;outline-offset:4px}
     s.el.classList.toggle('is-empty', ch == null);
     s.el.classList.toggle('is-wrong', ch != null && ch !== s.orig);
     s.el.classList.remove('is-loose');
+    kernH1();
+  }
+  // Dvojice, které se v tučném řezu slévají, dostanou trochu vzduchu navíc (i po přeházení písmen).
+  const KERN = { rt: .045, rf: .04, ry: .02 };
+  function kernH1() {
+    h1.slots.forEach((s, i) => {
+      const n = h1.slots[i + 1], pair = (s.el.textContent + (n && n.el.parentElement === s.el.parentElement ? n.el.textContent : '')).toLowerCase();
+      s.el.style.marginRight = KERN[pair] ? KERN[pair] + 'em' : '';
+    });
   }
   function letterFont(L) {
     const cs = getComputedStyle(h1.el);
