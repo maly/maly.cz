@@ -92,7 +92,7 @@
   const fig = { cx: 0, gy: 0, dir: 1, sink: 0, pose: 'stand', lean: 0, rot: 0, rotO: 0, air: false, brolly: false, vis: false, ticklish: false, freezable: false, floor: null, t: 0, hold: false, pebble: null, reachY: 0, tool: null };
   // šroubovák: stash (schovaný), stuck (trčí ze skrýše), air (v pohybu), carry, ground, fly, belt
   const sd = { state: 'stash', gx: 0, gy: 0, ang: 0, ta: 0, cdir: 0, x: 0, fy: 0, out: 0, el: null, frac: 0, spot: 0 };
-  const st = { stage: 0, rounds: 0, searched: false, gathered: false, longs: 0, fetches: 0, repairs: 0, lamps: 0, napped: false, thrown: 0, spells: 0, towers: 0 };
+  const st = { stage: 0, rounds: 0, searched: false, gathered: false, longs: 0, fetches: 0, repairs: 0, lamps: 0, napped: false, thrown: 0, spells: 0, towers: 0, plays: 0 };
   const ptr = { x: -1e4, y: -1e4, on: false, v: 0, ts: 0 };
   const CANCEL = Symbol('cancel'), FREE = { dead: false };
   const tasks = new Set();
@@ -699,6 +699,7 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     renderItems();
     if (fig.letter) renderLetter(fig.letter);
     if (fig.word) renderWord(fig.word);
+    if (fig.block && fig.vis) { const h = handPos(), B = toyB(); fig.block.style.transform = `translate3d(${(h.x - B / 2).toFixed(1)}px,${(h.y - B - 2).toFixed(1)}px,0)`; }
   }
   function renderFig(dt) {
     drawFig(dt);
@@ -1373,7 +1374,7 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     tween(FREE, 520, p => { e.style.transform = `translate3d(${(x0 + fig.dir * 18 * p).toFixed(1)}px,${(y0 + (y1 - y0) * p * p - Math.sin(p * Math.PI) * 14).toFixed(1)}px,0) rotate(${(p * 380 * fig.dir).toFixed(0)}deg)`; });
   }
 
-  const ACTS = { wave, peek, heist, retrieve, search, gather, longing, pliers: fetchPliers, repair, lamp, spell, tower };
+  const ACTS = { wave, peek, heist, retrieve, search, gather, longing, pliers: fetchPliers, repair, lamp, spell, tower, play };
 
   // ---------- mapa: kryt, který jde rozebrat ----------
   // Souřadnice jsou v jednotkách mapy (viewBox 920 × 920). Spoje jsou čtverečky v mapě,
@@ -2990,6 +2991,7 @@ html.pnk-turning .pnk-ply{display:block}
     placeMM();
     placeWords();
     placePockets();
+    placeToy();
   }
 
   // ---------- baterka a rub ----------
@@ -3485,7 +3487,7 @@ html.pnk-turning .pnk-ply{display:block}
     const tools = Object.values(items).filter(it => it.state === 'belt').map(it => it.id);
     progress();
     const h1s = h1.el ? { s: h1.slots.map(s => s.cur), f: h1.fallen.filter(L => L.fk && L.st !== 'gone').map(L => [L.ch, L.fk, +L.fr.toFixed(4), Math.round(L.a)]) } : undefined;
-    return { ub: under.visits, done: fin.done, lead: leadSave(), mm: mmSave(), h1: h1s, visor: fig.novisor ? 0 : 1, more: tools, holes: holes.map(h => [+h.fx.toFixed(4), Math.round(h.y), 2]), mute: audio.mute, sec: { h2: sec.h2, verbs: sec.verbs, open: sec.open, cut: sec.cut, off: sec.off }, ts: Date.now() };
+    return { toy: toy.n, ub: under.visits, done: fin.done, lead: leadSave(), mm: mmSave(), h1: h1s, visor: fig.novisor ? 0 : 1, more: tools, holes: holes.map(h => [+h.fx.toFixed(4), Math.round(h.y), 2]), mute: audio.mute, sec: { h2: sec.h2, verbs: sec.verbs, open: sec.open, cut: sec.cut, off: sec.off }, ts: Date.now() };
   }
   function onCut(f, x, y) {
     lastBreak = performance.now();
@@ -3510,6 +3512,7 @@ html.pnk-turning .pnk-ply{display:block}
     buildH1(saved.h1);
     buildMM(saved.mm);
     buildLead(saved.lead);
+    buildToy(saved.toy);
     progress(); renderItems();
 
     addEventListener('pointerdown', e => {
@@ -4503,6 +4506,149 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
     await duck(tk);
   }
 
+  // ---------- hračka u made4fun ----------
+  // V řádku s made4fun si panáček občas hraje: vyleze zpoza linky, vedle sebe má krabičku s kostkami
+  // a staví z nich pyramidu, pár kostek za návštěvu. Hotovou ozdobí vlaječkou. Kliknutím jde stavba
+  // shodit; kostky se rozkutálejí a příště ji postaví znovu. Kolik kostek stojí, se pamatuje.
+  const TOY_ROWS = [4, 3, 2, 1], TOY_N = 10, TOY_COL = [Y, TEAL, '#d9483b', '#6cc7f5', '#0b7a4f'];
+  const toy = { n: 0, els: [], box: null, flag: null, busy: false };
+  const toyLink = () => secEl.links.find(a => (a.getAttribute('href') || a.dataset.pnkHref || '').includes('made4fun'));
+  const toyB = () => Math.round(2.7 * S);
+  function toyGeom() {
+    const a = toyLink();
+    if (!a) return null;
+    const r = a.getBoundingClientRect(), t = a.querySelector('.ref-title'), u = a.querySelector('.ref-url');
+    if (!r.width || !t || !u) return null;
+    const tr = t.lastElementChild ? t.lastElementChild.getBoundingClientRect() : t.getBoundingClientRect(), ur = u.getBoundingClientRect();
+    const one = Math.abs(tr.top - ur.top) < 10;          // na šířku je titulek i adresa na jednom řádku
+    const x1 = (one ? tr.right + 34 : r.left + r.width * .4) + scrollX, x2 = (one ? ur.left - 30 : r.right - 104) + scrollX;
+    const f = { el: a, y: r.bottom + scrollY - 1, x1: r.left + scrollX, x2: r.right + scrollX };
+    const bx = Math.min(x2 - 4 * toyB(), x1 + 20 * S);
+    return { a, f, x1, x2, bx, box: x1 + 3 * S, ok: x2 - x1 > 18 * S + 4 * toyB() };
+  }
+  function slotXY(g, k) {
+    const B = toyB();
+    let r = 0, j = k;
+    while (j >= TOY_ROWS[r]) { j -= TOY_ROWS[r]; r++; }
+    return { x: g.bx + (r * .5 + j) * B + B / 2, y: g.f.y - r * B - B / 2 };
+  }
+  function toyBlock(k) {
+    const e = el('div', 'pnk-block'), B = toyB();
+    e.style.width = e.style.height = B + 'px'; e.style.background = TOY_COL[k % TOY_COL.length];
+    e.addEventListener('click', knockToy);
+    layer.appendChild(e);
+    return e;
+  }
+  function placeToy() {
+    const g = toyGeom();
+    for (const e of toy.els) e.style.display = g && g.ok ? '' : 'none';
+    if (!g || !g.ok) return;
+    const B = toyB();
+    toy.els.forEach((e, k) => {
+      if (e.pnkFree) return;
+      const s = slotXY(g, k);
+      e.style.width = e.style.height = B + 'px';
+      e.style.transform = `translate3d(${(s.x - B / 2).toFixed(1)}px,${(s.y - B / 2).toFixed(1)}px,0)`;
+    });
+    if (toy.flag) {
+      const top = slotXY(g, TOY_N - 1);
+      toy.flag.style.transform = `translate3d(${(top.x - 1).toFixed(1)}px,${(top.y - B / 2 - 4 * S).toFixed(1)}px,0)`;
+      toy.flag.style.height = 4 * S + 'px';
+    }
+  }
+  function buildToy(saved) {
+    const style = pstyle();
+    style.textContent = `
+.pnk-block{position:absolute;left:0;top:0;box-sizing:border-box;border:1.5px solid ${K};pointer-events:auto;cursor:pointer;will-change:transform}
+.pnk-block::after{content:"";position:absolute;left:18%;top:18%;width:28%;height:28%;border-radius:50%;background:rgba(255,255,255,.55)}
+.pnk-toyflag{position:absolute;left:0;top:0;width:2px;background:${K};pointer-events:none}
+.pnk-toyflag::after{content:"";position:absolute;left:2px;top:0;width:14px;height:9px;background:#d9483b;clip-path:polygon(0 0,100% 50%,0 100%);animation:pnk-flag 1.4s ease-in-out infinite;transform-origin:0 50%}
+@keyframes pnk-flag{50%{transform:scaleX(.75)}}
+.pnk-toybox{position:absolute;left:0;top:0;box-sizing:border-box;border:1.5px solid ${K};border-top-width:3px;background:#c9a46c;pointer-events:none;display:none}
+`;
+    doc.head.appendChild(style);
+    toy.n = clamp(saved | 0, 0, TOY_N);
+    for (let k = 0; k < toy.n; k++) toy.els.push(toyBlock(k));
+    if (toy.n === TOY_N) addFlag();
+    toy.box = el('div', 'pnk-toybox'); layer.appendChild(toy.box);
+    placeToy();
+  }
+  function addFlag() { if (!toy.flag) { toy.flag = el('div', 'pnk-toyflag'); layer.appendChild(toy.flag); } }
+  // Shození: kostky se rozkutálejí po lince řádku a za chvíli zmizí.
+  function knockToy(e) {
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    const g = toyGeom();
+    if (!g || !toy.els.length) return;
+    snd('rach'); puffAt(g.bx + 2 * toyB(), g.f.y - 6 * toyB(), 'řach');
+    lastBreak = performance.now();
+    const B = toyB();
+    for (const b of toy.els) {
+      b.pnkFree = true; b.style.pointerEvents = 'none';
+      const m = new DOMMatrixReadOnly(getComputedStyle(b).transform), x0 = m.m41, y0 = m.m42, vx = rand(-160, 160), a1 = rand(-200, 200);
+      const y1 = g.f.y - B, h = rand(10, 40);
+      tween(FREE, 600, p => { b.style.transform = `translate3d(${(x0 + vx * p).toFixed(1)}px,${(y0 + (y1 - y0) * p * p - Math.sin(p * Math.PI) * h).toFixed(1)}px,0) rotate(${(a1 * p).toFixed(0)}deg)`; })
+        .then(() => { b.style.transition = 'opacity .8s 2.5s'; b.style.opacity = '0'; setTimeout(() => b.remove(), 3500); });
+    }
+    toy.els = []; toy.n = 0;
+    if (toy.flag) { toy.flag.remove(); toy.flag = null; }
+    if (act && act.name === 'play') fig.pose = 'sad';
+    save();
+  }
+  function toyReady() {
+    const g = toyGeom();
+    return !!(g && g.ok && visibleY(g.f.y) && !sec.off.includes(secEl.links.indexOf(g.a)));
+  }
+  async function play(tk) {
+    st.plays++;
+    const g = toyGeom();
+    if (!g || !g.ok) return;
+    const f = g.f, B = toyB();
+    try {
+      Object.assign(toy.box.style, { display: 'block', width: 3.2 * B + 'px', height: 2 * B + 'px', transform: `translate3d(${(g.box - 1.6 * B).toFixed(1)}px,${(f.y - 2 * B).toFixed(1)}px,0)` });
+      await climb(tk, f, clamp(g.box + 6 * S, f.x1 + HW, f.x2 - HW), 1);
+      if (toy.n === TOY_N) {                       // hotovo: chvíli se kochá
+        await go(tk, g.bx - 3 * S, { speed: 20 * S });
+        fig.dir = 1; fig.pose = 'think'; puff('hm…', true);
+        await wait(tk, 1600);
+        fig.pose = 'proud'; puff('pěkné', true);
+        await wait(tk, 1300);
+      } else {
+        fig.pose = 'wave'; puff(toy.n ? 'pokračujem' : 'kostičky!');
+        await wait(tk, 900);
+        const todo = Math.min(TOY_N - toy.n, 3 + Math.floor(rand(0, 3)));
+        for (let i = 0; i < todo; i++) {
+          if (toy.n >= TOY_N) break;
+          await go(tk, clamp(g.box + 4 * S, f.x1 + HW / 2, f.x2), { speed: 30 * S });
+          fig.dir = -1; fig.reachY = 1.2; fig.pose = 'place';
+          await wait(tk, 320);
+          const k = toy.n, b = toyBlock(k);
+          b.style.pointerEvents = 'none';
+          fig.block = b; fig.pose = 'trophy';
+          const s = slotXY(g, k);
+          await go(tk, clamp(s.x - 4 * S, f.x1 + HW / 2, f.x2), { speed: 24 * S, pose: 'trophy' });
+          fig.dir = 1; fig.reachY = (f.y - s.y) / S; fig.pose = 'place';
+          await wait(tk, 360);
+          fig.block = null; b.style.pointerEvents = '';
+          toy.els.push(b); toy.n++; placeToy(); snd('tuk'); save();
+          fig.pose = 'stand';
+          await wait(tk, 180);
+        }
+        if (toy.n === TOY_N) {
+          addFlag(); placeToy();
+          fig.pose = 'proud'; puff('ta-dá!');
+          await wait(tk, 1300);
+        } else {
+          fig.pose = 'proud'; puff('zítra dál', true);
+          await wait(tk, 1000);
+        }
+      }
+      await duck(tk);
+    } finally {
+      if (fig.block) { fig.block.remove(); fig.block = null; }
+      toy.box.style.display = 'none';
+    }
+  }
+
   // ---------- plánování ----------
   function tick() {
     if (CALM || act || forced || fin.on || turn.side || turn.busy || doc.hidden || sd.state === 'fly' || sd.state === 'air') return;
@@ -4519,6 +4665,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
         && (pl.state !== 'hook' || pebbles.filter(p => p.st === 'pile').length >= 3)) {
         if (since > (pl.state === 'ground' ? T.retrieve : Math.min(40000, 5000 * 1.5 ** st.fetches) * q)) run('pliers', fetchPliers);
       }
+      else if (toyReady() && now - lastBreak > 6000 * q && since > Math.min(60000, 7000 * 1.5 ** st.plays) * q) run('play', play);
       else if (pl.state === 'hook' && wf && visibleY(wf.y) && since > Math.min(60000, 9000 * 1.6 ** st.longs) * q) run('longing', longing);
       else if (!world.removed.length && (st.searched ? idle > T.searchIdle && since > T.searchIdle : since > T.search)) run('search', search);
     } else if (sd.state === 'ground') {
