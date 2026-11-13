@@ -422,3 +422,18 @@
     min-height: 320px;
   }
 }
+
+.ref-new {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 6px;
+  background: var(--accent);
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1;
+  text-transform: uppercase;
+  vertical-align: 3px;
+}
