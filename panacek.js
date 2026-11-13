@@ -118,6 +118,7 @@
   };
 
   // ---------- stavba ----------
+  const toolImg = {};                     // obrázek a aktivní bod každého nástroje (jako kurzor)
   function pstyle() { const s = doc.createElement('style'); s.dataset.pnk = ''; return s; }
   function el(tag, cls) { const e = doc.createElement(tag); e.className = cls; return e; }
   function canvas(w, h) { const c = doc.createElement('canvas'); c.width = w; c.height = h; return c; }
@@ -171,6 +172,7 @@ html.pnk-fin .pnk-map{max-width:380px;max-height:380px}
 .pnk-slot canvas{position:absolute;left:50%;top:50%;width:40px;height:10px;margin:-5px 0 0 -20px;transform:rotate(90deg)}
 .pnk-count{min-width:3ch;text-align:right;opacity:.75}
 @media (max-width:560px){.pnk-belt{right:10px;bottom:10px;gap:7px}.pnk-belt-name{display:none}}
+@media (pointer:coarse){.pnk-slot{width:34px!important;height:54px}.pnk-slots{gap:6px}.pnk-belt{padding:8px 10px}}
 .pnk-slot.is-active{border-color:#f2b705;background:rgba(242,183,5,.24)}
 .pnk-slot.is-hint{animation:pnk-wiggle 3.6s ease-in-out infinite}
 @keyframes pnk-wiggle{0%,76%,100%{transform:none}80%{transform:rotate(-14deg)}85%{transform:rotate(11deg)}90%{transform:rotate(-6deg)}95%{transform:rotate(3deg)}}
@@ -237,7 +239,8 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
 .tag.pnk-hole a{color:${TEAL};font-size:10px;letter-spacing:0;text-transform:none;text-decoration:underline}
 `;
     // při páčení kurzor mizí, šroubovák je vidět jen jako páka u spoje
-    style.textContent += `html.pnk-tool,html.pnk-tool *{cursor:url(${cursorURL()}) 11 11,crosshair!important}html.pnk-tool.pnk-prying,html.pnk-tool.pnk-prying *{cursor:none!important}`;
+    toolImg.sd = [cursorURL(), 11, 11];
+    style.textContent += `html.pnk-tool,html.pnk-tool *{cursor:url(${toolImg.sd[0]}) 11 11,crosshair!important}html.pnk-tool.pnk-prying,html.pnk-tool.pnk-prying *{cursor:none!important}`;
     doc.head.appendChild(style);
 
     layer = el('div', 'pnk-layer');
@@ -1892,9 +1895,9 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     else if (!world.swing) world.jolt.v += (Math.random() < .5 ? -1 : 1) * (14 + world.removed.length * 4);
     updateLines(); save(); hint(); kick();
   }
-  function pinAt(cx, cy) {
+  function pinAt(cx, cy, r = 18) {
     if (!world.ready || world.fall || world.gone) return null;
-    let best = null, bd = 18;
+    let best = null, bd = r;
     for (const p of world.pins) {
       if (!p.on) continue;
       const d = Math.hypot(p.px - scrollX - cx, p.py - scrollY - cy);
@@ -1944,12 +1947,24 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
       g.setTransform(u, 0, 0, u, 0, 0); paintSd(g, u);
       layer.appendChild(c); tool.el = c;
     }
-    tool.pry = { pin, id: e.pointerId, p: 0, ang: -Math.PI * .75, dir: null };   // jako kurzor: hrot vlevo nahoru
+    tool.pry = { pin, id: e.pointerId, p: 0, ang: -Math.PI * .75, dir: null, touch: e.pointerType !== 'mouse', t0: performance.now() };   // jako kurzor: hrot vlevo nahoru
     root.classList.add('pnk-prying');
     tool.el.style.display = 'block';
     setHover(pin);
     pryMove(e);
+    if (tool.pry && tool.pry.touch) pryHold(tool.pry);
     return true;
+  }
+  // Na dotyku stačí krytku podržet: šroubovák se sám opře a páka se zvedá, až cvakne.
+  function pryHold(P) {
+    let last = performance.now();
+    const step = now => {
+      if (tool.pry !== P) return;
+      const dt = now - last; last = now;
+      if (P.dir == null && now - P.t0 > 140) { P.p = Math.min(1, P.p + dt / 800); pryRender(P); }
+      if (tool.pry === P) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
   // Páka: hrot pod spojem, rukojeť míří ke kurzoru. Čím dál, tím víc se spoj zvedá, až povolí.
   // Tlačení: šroubovák při stisku zůstane natočený jako kurzor (hrot vlevo nahoru, na krytce).
@@ -1966,7 +1981,11 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     if (P.dir != null) {
       P.ang += diff(P.dir, P.ang) * .35;                     // natáčí se plynule, nikdy neskočí
       P.p = clamp((dx * Math.cos(P.dir) + dy * Math.sin(P.dir)) / PRY, 0, 1);
-    } else P.p = Math.max(0, P.p - .2);
+    } else if (!P.touch) P.p = Math.max(0, P.p - .2);
+    pryRender(P);
+  }
+  function pryRender(P) {
+    const pin = P.pin;
     const dir = P.dir == null ? P.ang : P.dir, ux = Math.cos(dir), uy = Math.sin(dir);
     const lift = 12 * P.p * P.p, s0 = world.box ? world.box.s : .5;
     const jit = P.p > .55 ? rand(-1, 1) * P.p : 0, rot = (P.p * 32 + jit * 4) * (ux >= 0 ? 1 : -1);
@@ -2222,7 +2241,8 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     slots[1].addEventListener('click', () => { if (pl.state === 'belt') togglePliers(); });
     const cc = canvas(1, 1); drawPliers(cc, .5);
     const style = pstyle();
-    style.textContent = `html.pnk-pliers,html.pnk-pliers *{cursor:url(${cc.toDataURL()}) 8 3,crosshair!important}`;
+    toolImg.pl = [cc.toDataURL(), 8, 3];
+    style.textContent = `html.pnk-pliers,html.pnk-pliers *{cursor:url(${toolImg.pl[0]}) 8 3,crosshair!important}`;
     doc.head.appendChild(style);
   }
   function hookPos() { const r = world.hang.getBoundingClientRect(); return { x: r.left + r.width / 2 + scrollX, y: r.bottom + scrollY }; }
@@ -2567,7 +2587,8 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     let cur = '';
     for (const [n, it] of Object.entries(items)) {
       const c = canvas(1, 1); drawItem(c, it, .6);
-      cur += `html.pnk-t-${n},html.pnk-t-${n} *{cursor:url(${c.toDataURL()}) 1 ${Math.round(it.h * .6 * (n === 'drill' ? .28 : .5))},crosshair!important}`;
+      toolImg[n] = [c.toDataURL(), 1, Math.round(it.h * .6 * (n === 'drill' ? .28 : .5))];
+      cur += `html.pnk-t-${n},html.pnk-t-${n} *{cursor:url(${toolImg[n][0]}) 1 ${toolImg[n][2]},crosshair!important}`;
     }
     style.textContent = cur + `
 .pnk-buckle{padding:0;background:none;cursor:pointer;box-sizing:content-box}
@@ -3725,6 +3746,7 @@ html.pnk-t-iron .pnk-ref.is-off,html.pnk-t-iron .item.is-cut,html.pnk-t-iron .pn
 .pnk-tip{position:fixed;left:0;top:0;z-index:2147483001;max-width:260px;padding:10px 12px;background:#14181d;color:#e9e3d0;font:500 13px/1.4 Inter,ui-sans-serif,system-ui,sans-serif;pointer-events:none;display:none;box-shadow:0 0 0 1px #e9e3d0}
 .pnk-tip b{display:block;margin-bottom:4px;color:#6cc7f5;font:800 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase}
 `;
+    style.textContent += '@media (max-width:700px){.pnk-sign{margin-left:-2px;padding-left:20px}}';
     doc.head.appendChild(style);
 
     const smer = cards[0], h2 = smer && smer.querySelector('h2');
@@ -4113,17 +4135,35 @@ html.pnk-tool .brand-mark{outline:2px dashed #f2b705;outline-offset:3px;touch-ac
       mmMove(e);
     }, { capture: true });
     addEventListener('pointermove', mmMove, { capture: true, passive: true });
-    const end = e => { if (mm.drag && e.pointerId === mm.drag.id) mm.drag = null; };
+    const end = e => {
+      const D = mm.drag;
+      if (!D || e.pointerId !== D.id) return;
+      mm.drag = null;
+      if (e.type === 'pointerup' && e.pointerType === 'touch' && !D.moved && mm.out < MM_OUT) {   // klepnutí: čtvrt otáčky
+        const o0 = mm.out, o1 = Math.min(MM_OUT, o0 + 90);
+        snd('krok');
+        tween(FREE, 260, v => { mm.out = o0 + (o1 - o0) * ease.out(v); applyMM(); }).then(() => { if (mm.out >= MM_OUT) popMM(true); applyMM(); save(); });
+        lastBreak = performance.now();
+      }
+    };
     addEventListener('pointerup', end, true); addEventListener('pointercancel', end, true);
   }
   function mmMove(e) {
     const D = mm.drag;
     if (!D || e.pointerId !== D.id) return;
     const dx = e.clientX - D.cx, dy = e.clientY - D.cy;
-    if (Math.hypot(dx, dy) < 6) return;
-    const a = Math.atan2(dy, dx) * 180 / Math.PI;
-    if (D.a != null) {
-      let d = a - D.a; d = ((d + 540) % 360) - 180;
+    let a, d = null;
+    if (e.pointerType === 'touch') {               // na dotyku se točí tahem do strany: doleva povoluje
+      if (D.lx == null) { D.lx = e.clientX; D.x0 = e.clientX; return; }
+      if (Math.abs(e.clientX - D.x0) > 8) D.moved = true;
+      d = (e.clientX - D.lx) * 1.8; D.lx = e.clientX;
+      if (!D.moved) return;
+    } else {
+      if (Math.hypot(dx, dy) < 6) return;
+      a = Math.atan2(dy, dx) * 180 / Math.PI;
+      if (D.a != null) { d = a - D.a; d = ((d + 540) % 360) - 180; }
+    }
+    if (d != null) {
       mm.out = clamp(mm.out - d, MM_IN, MM_OUT);   // proti směru ručiček povoluje
       const k = Math.floor(mm.out / 30);
       if (k !== mm.step) {
@@ -4649,6 +4689,80 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
     }
   }
 
+  // ---------- dotyk: hrot nad prstem ----------
+  // Prst zakrývá, kam nástroj míří. Na dotyku se proto nástroj kreslí kousek nad prstem a všechno,
+  // co by se stalo pod prstem, se stane v místě hrotu: skutečné události se zastaví a znovu se
+  // pošlou do místa hrotu. Hrot se navíc přichytí k drobným cílům v okolí (krytky, šrouby, značka).
+  // Kde pod hrotem nic není, prst stránku normálně posouvá.
+  const TIPY = 52, SNAP = 30;
+  const tipD = new Map();
+  let tipMark = null;
+  const heldTool = () => (tool.on ? 'sd' : tool.pl ? 'pl' : tool.cur);
+  const PASS = '.pnk-belt,.pnk-corner,.pnk-rub,.pnk-it,.pnk-pl,.pnk-sd,.pnk-pocket,.pnk-dl-iron,.pnk-hang';
+  const ACTIVE = '.tag,.pnk-screw,.pnk-sign,.list .item,.pnk-ref,.pnk-verb,.pnk-ch,.pnk-h1,.brand-mark,.nav,.hero .lead,.pnk-hole2,.pnk-block,.portrait,.pnk-fig';
+  function tipSnap(x, y) {
+    let best = null, bd = SNAP;
+    if (tool.on && world.ready && !world.gone && !world.fall) for (const q of world.pins) {
+      if (!q.on) continue;
+      const d = Math.hypot(q.px - scrollX - x, q.py - scrollY - y);
+      if (d < bd) { bd = d; best = [q.px - scrollX, q.py - scrollY]; }
+    }
+    for (const s of doc.querySelectorAll('.pnk-screw,.brand-mark')) {
+      const r = s.getBoundingClientRect();
+      if (!r.width) continue;
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2, d = Math.hypot(cx - x, cy - y);
+      if (d < bd) { bd = d; best = [cx, cy]; }
+    }
+    return best || [x, y];
+  }
+  function tipSend(type, e, x, y) {
+    const t = doc.elementFromPoint(x, y) || doc.body;
+    let ev;
+    try {
+      ev = new PointerEvent(type, { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, screenX: x, screenY: y,
+        pointerId: e.pointerId, pointerType: 'touch', isPrimary: e.isPrimary, button: e.button, buttons: e.buttons, pressure: e.pressure || .5 });
+    } catch (er) { return; }
+    ev.pnkSyn = true;
+    t.dispatchEvent(ev);
+    return t;
+  }
+  function tipShow(x, y) {
+    const n = heldTool(), im = toolImg[n];
+    if (!tipMark) { tipMark = el('div', 'pnk-tipmark'); doc.body.appendChild(tipMark); }
+    tipMark.style.display = 'block';
+    tipMark.style.transform = `translate3d(${x}px,${y}px,0)`;
+    if (im && tipMark.dataset.t !== n) { tipMark.dataset.t = n; tipMark.style.setProperty('--img', `url(${im[0]})`); tipMark.style.setProperty('--hx', -im[1] + 'px'); tipMark.style.setProperty('--hy', -im[2] + 'px'); }
+  }
+  function tipSetup() {
+    const style = pstyle();
+    style.textContent = `.pnk-tipmark{position:fixed;left:0;top:0;z-index:2147483003;width:0;height:0;pointer-events:none;display:none}
+.pnk-tipmark::before{content:"";position:absolute;left:-9px;top:-9px;width:18px;height:18px;box-sizing:border-box;border:2px solid #f2b705;border-radius:50%;box-shadow:0 0 0 1px ${K}}
+.pnk-tipmark::after{content:"";position:absolute;left:var(--hx);top:var(--hy);width:48px;height:48px;background:var(--img) no-repeat 0 0}`;
+    doc.head.appendChild(style);
+    const onEv = e => {
+      if (e.pnkSyn || e.pointerType !== 'touch') return;
+      const type = e.type;
+      let s = tipD.get(e.pointerId);
+      if (type === 'pointerdown') {
+        if (!heldTool() || (e.target.closest && e.target.closest(PASS))) return;
+        const [x, y] = tipSnap(e.clientX, e.clientY - TIPY);
+        const t = doc.elementFromPoint(x, y);
+        s = { dx: x - e.clientX, dy: y - e.clientY, act: heldTool() === 'drill' ? false : !!(t && t.closest && t.closest(ACTIVE)) || !!pinAt(x, y, SNAP) || headAt(x, y, true) || overFig(x, y) || !!wireAt(x + scrollX, y + scrollY, true) };
+        tipD.set(e.pointerId, s);
+      }
+      if (!s) return;
+      e.stopImmediatePropagation();
+      const x = e.clientX + s.dx, y = e.clientY + s.dy;
+      if (type === 'pointerup' || type === 'pointercancel') { tipD.delete(e.pointerId); if (tipMark) tipMark.style.display = 'none'; }
+      else tipShow(x, y);
+      tipSend(type, e, x, y);
+    };
+    for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) addEventListener(t, onEv, { capture: true });
+    // kde je pod hrotem cíl, prst stránku neposouvá
+    addEventListener('touchstart', e => { for (const s of tipD.values()) if (s.act) { e.preventDefault(); return; } }, { capture: true, passive: false });
+    addEventListener('touchmove', e => { for (const s of tipD.values()) if (s.act) { e.preventDefault(); return; } }, { capture: true, passive: false });
+  }
+
   // ---------- plánování ----------
   function tick() {
     if (CALM || act || forced || fin.on || turn.side || turn.busy || doc.hidden || sd.state === 'fly' || sd.state === 'air') return;
@@ -4695,6 +4809,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
     // Safari ho po přepnutí karty uspí a probudit ho jde jen uvnitř gesta.
     const wake = () => { unlock(); const c = audio.ctx; if (c && c.state !== 'running' && !audio.mute) try { c.resume().catch(() => {}); } catch (e) { /* nic */ } };
     for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, wake, { capture: true, passive: true });
+    tipSetup();
     addEventListener('pointerdown', () => { swallow = 0; }, true);   // nové stisknutí: staré spolknutí už neplatí
     // za čepici jde panáčka chytit, to má přednost i před nástroji
     addEventListener('pointerdown', e => {
