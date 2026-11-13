@@ -3938,8 +3938,9 @@ html.pnk-t-iron .pnk-ref.is-off,html.pnk-t-iron .item.is-cut,html.pnk-t-iron .pn
     h1.el = e;
     const style = pstyle();
     style.textContent = `
-.pnk-word{display:inline-block;white-space:nowrap}
-.pnk-ch{display:inline-block;transform-origin:50% 92%;transition:transform .25s}
+.pnk-word{white-space:nowrap}
+.pnk-ch{transform-origin:50% 92%;transition:transform .25s}
+.pnk-ch.is-loose,html.pnk-tool .pnk-ch:hover{display:inline-block}
 .pnk-ch.is-empty{color:transparent;outline:2px dashed rgba(16,19,23,.2);outline-offset:-.12em}
 .pnk-ch.is-loose{transform:rotate(-7deg) translateY(-.04em);animation:pnk-loose .5s ease-out}
 @keyframes pnk-loose{25%{transform:rotate(-13deg)}55%{transform:rotate(-4deg)}}

@@ -122,7 +122,7 @@
       max-width: 9ch;
       font-size: clamp(58px, 9vw, 116px);
       line-height: .86;
-      letter-spacing: -.085em;
+      letter-spacing: -.06em;
     }
 
     .lead {
