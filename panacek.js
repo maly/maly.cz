@@ -2612,6 +2612,7 @@ html.pnk-turning .pnk-corner{transition:none;visibility:hidden}
 .pnk-rub.is-on{position:relative;inset:auto;min-height:100vh;overflow:visible;visibility:visible}
 .pnk-shade{position:absolute;left:0;top:0;width:100%;height:100%;background:#07090b;opacity:0;pointer-events:none;display:none;z-index:5}
 html.pnk-turning .pnk-shade{display:block}
+.pnk-under{position:fixed;left:0;top:0;z-index:-1;display:none;pointer-events:none}
 .pnk-ply{position:fixed;left:50%;top:0;height:100vh;z-index:2147483001;pointer-events:none;display:none;box-sizing:border-box;background:repeating-linear-gradient(to right,#e6c995 0 2px,#c49a5e 2px 3px,#ead3a6 3px 6px,#b7884f 6px 7px);border-top:1px solid #8a6436;border-bottom:1px solid #8a6436}
 html.pnk-turning .pnk-ply{display:block}
 .pnk-rub-in{position:relative;width:min(1180px,calc(100% - 48px));margin:0 auto;padding:28px 0 140px}
@@ -3027,11 +3028,13 @@ html.pnk-turning .pnk-ply{display:block}
     Object.assign(page.style, { backgroundColor: cs.backgroundColor, backgroundImage: cs.backgroundImage, backgroundSize: cs.backgroundSize });
     turn.busy = true;
     root.classList.add('pnk-turning'); rub.classList.add('is-turning');
+    underStart(turn.side);
     snd('flip');
     setTurn(turn.side ? 180 : 0);
   }
   function setTurn(a) {
     turn.a = a = clamp(a, 0, 180);
+    under.a = a;
     const page = doc.querySelector('.page'), W = innerWidth, H = innerHeight, y0 = scrollY, h = PLY / 2;
     // deska se přisouvá k divákovi: vzdálený okraj zůstává v rovině stránky, přilehlý se zvedá a roste
     const lift = W / 2 * Math.sin(rad(a)), P = Math.max(PERSP, W * 2.2);
@@ -3065,21 +3068,253 @@ html.pnk-turning .pnk-ply{display:block}
       applyMM();
       remeasureAll();
     }
-    snd('tuk'); rubLight();
+    snd('tuk'); rubLight(); underStop();
   }
   function turnTo(side, from) {
     cancelAnimationFrame(turn.anim);
     if (!turn.busy) { if (turn.side === side) return; turnBegin(); }
     const a0 = from != null ? from : turn.a, a1 = side ? 180 : 0, ms = 120 + Math.abs(a1 - a0) / 180 * 680;
+    // když pod deskou někdo je, deska se bokem na chvíli zarazí, aby byl vidět úprk
+    const cross = (a0 - 90) * (a1 - 90) < 0 && underAlive(), hold = cross ? 300 : 0;
+    const m1 = cross ? ms * Math.abs(90 - a0) / Math.abs(a1 - a0) : ms, m2 = ms - m1;
     const t0 = performance.now();
     const step = now => {
-      const p = Math.min(1, (now - t0) / ms);
-      setTurn(a0 + (a1 - a0) * ease.io(p));
-      if (p < 1) turn.anim = requestAnimationFrame(step); else turnFinish(side);
+      const t = now - t0;
+      let a, done = false;
+      if (!cross) { const p = Math.min(1, t / ms); a = a0 + (a1 - a0) * ease.io(p); done = p >= 1; }
+      else if (t < m1) a = a0 + (90 - a0) * ease.io(t / m1);
+      else if (t < m1 + hold) a = 90;
+      else { const p = Math.min(1, (t - m1 - hold) / m2); a = 90 + (a1 - 90) * ease.io(p); done = p >= 1; }
+      setTurn(a);
+      if (!done) turn.anim = requestAnimationFrame(step); else turnFinish(side);
     };
     turn.anim = requestAnimationFrame(step);
   }
   function flip(on) { if (rub) turnTo(on ? 1 : 0); }
+
+  // ---------- pod deskou ----------
+  // Pod deskou žije kolonie drobných panáčků, kteří web drží zespodu: podpírají desku, tahají kabely,
+  // nosí písmena a kartičky se styly, suší prádlo. Když se deska zvedne, ztuhnou, pak se rozutečou
+  // ke krajům okna (od světla). Kdo desku drží bokem, uvidí je vykukovat. Když deska klesá, vrhnou se
+  // pod ni. Při dalších otočeních jich je míň, pak tam je jen cedule a nakonec vzkaz, že se odstěhovali.
+  // Uprostřed sedí s hrnkem hlavní panáček; ten neutíká.
+  const UNDER_N = [34, 24, 15, 8, 4, 0];
+  const under = { cv: null, g: null, raf: 0, last: 0, a: 0, visits: 0, kids: [], exposed: false, light: 1, t: 0, fled: -1e9, floor: null, items: [], w: 0, h: 0 };
+  const underAlive = () => under.kids.some(k => k.st !== 'gone');
+  function underStart(fromBack) {
+    if (CALM) return;
+    if (!under.cv) {
+      under.cv = canvas(1, 1); under.cv.className = 'pnk-under'; under.g = under.cv.getContext('2d');
+      doc.body.prepend(under.cv);
+    }
+    const W = innerWidth, H = innerHeight;
+    if (under.w !== W || under.h !== H) {
+      under.w = W; under.h = H;
+      under.cv.width = Math.round(W * DPR); under.cv.height = Math.round(H * DPR);
+      under.cv.style.width = W + 'px'; under.cv.style.height = H + 'px';
+      under.floor = null;
+    }
+    under.light = fromBack ? -1 : 1;              // světlo přichází z té strany, kde se deska zvedá
+    const now = performance.now();
+    if (!under.kids.some(k => k.st !== 'gone') && now - under.fled > 2500) populate();
+    under.exposed = false; under.peak = 0;
+    under.cv.style.display = 'block';
+    under.last = now;
+    cancelAnimationFrame(under.raf);
+    under.raf = requestAnimationFrame(underLoop);
+  }
+  function underStop() {
+    cancelAnimationFrame(under.raf); under.raf = 0;
+    if (under.cv) under.cv.style.display = 'none';
+    for (const k of under.kids) if (k.st === 'dive' || k.st === 'peek') k.st = 'gone';
+  }
+  function populate() {
+    under.vi = Math.min(under.visits, UNDER_N.length - 1);
+    const W = under.w, H = under.h, n = UNDER_N[under.vi];
+    const sc = W < 700 ? 1.45 : 2;
+    under.kids = [];
+    under.items = [];
+    const role = i => (i < Math.ceil(n * .4) ? 'hold' : i < Math.ceil(n * .6) ? 'pull' : i < n - 2 ? 'carry' : i === n - 1 ? 'sleep' : 'wash');
+    for (let i = 0; i < n; i++) {
+      const r = role(i);
+      const k = { r, st: 'work', x: rand(W * .08, W * .92), y: rand(H * .18, H * .95), dir: Math.random() < .5 ? -1 : 1, ph: rand(0, TAU), s: sc * rand(.9, 1.1),
+        vx: 0, vy: 0, tf: 0, sp: rand(190, 320), item: r === 'carry' ? (Math.random() < .5 ? 'card' : 'letter') : null, ch: 'MARTINMALÝ'[Math.floor(rand(0, 10))] };
+      if (r === 'hold') { const c = Math.ceil(n * .4), j = i % c; k.x = W * (.12 + .76 * (j + .5) / c) + rand(-20, 20); k.y = H * (j % 2 ? .45 : .82) + rand(-30, 30); }
+      if (r === 'wash') { k.x = W * .1 + rand(-10, 30); k.y = H * .3; }
+      if (r === 'sleep') { k.x = W * rand(.65, .85); k.y = H * rand(.6, .9); }
+      k.hx = k.x; k.hy = k.y;
+      under.kids.push(k);
+    }
+  }
+  // Podlaha: prach, škrábance, stopy po deskách, šňůra s prádlem, cedule nebo vzkaz.
+  function drawFloor() {
+    const W = under.w, H = under.h, c = canvas(Math.round(W * DPR), Math.round(H * DPR)), g = c.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.fillStyle = '#2b2720'; g.fillRect(0, 0, W, H);
+    const rnd = (a => () => (a = (a * 16807) % 2147483647) / 2147483647)(91);
+    for (let i = 0; i < W * H / 260; i++) { g.fillStyle = `rgba(${rnd() < .5 ? '255,240,210' : '0,0,0'},${(rnd() * .08).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 1 + rnd() * 2); }
+    g.strokeStyle = 'rgba(255,240,210,.05)'; g.lineWidth = 1;
+    for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, l = 20 + rnd() * 90, a = rnd() * TAU; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    g.fillStyle = 'rgba(0,0,0,.25)';
+    for (let i = 0; i < 7; i++) g.fillRect(0, (i + .5) * H / 7, W, 2);      // spáry mezi prkny podlahy
+    g.font = '700 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'; g.fillStyle = 'rgba(233,227,208,.22)';
+    g.fillText('SEM NEŠLAPAT', W * .62, H * .14);
+    g.fillText('→ k rubu', W * .08, H * .97);
+    return c;
+  }
+  function mini(g, k, t) {
+    const s = k.s, ph = k.ph + t * (k.st === 'run' || k.st === 'dive' ? .024 : .006);
+    g.save(); g.translate(k.x, k.y); g.scale(k.dir * s, s);
+    g.strokeStyle = '#e9e3d0'; g.fillStyle = '#e9e3d0'; g.lineCap = g.lineJoin = 'round'; g.lineWidth = 1.25;
+    const L = (a, b, c, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); };
+    let lean = 0, hand = [[3, -7], [-3, -7]], foot = [[1.6, 0], [-1.6, 0]], eye = 'dot', bob = 0;
+    const st = k.st, r = k.r;
+    if (st === 'run' || st === 'dive') {
+      lean = 2.2; bob = Math.abs(Math.sin(ph)) * .8;
+      foot = [[Math.sin(ph) * 3.2, -Math.max(0, Math.cos(ph)) * 1.6], [-Math.sin(ph) * 3.2, -Math.max(0, -Math.cos(ph)) * 1.6]];
+      hand = [[2 - Math.sin(ph) * 3, -7.5], [2 + Math.sin(ph) * 3, -7.5]]; eye = 'wide';
+    } else if (st === 'freeze') { hand = [[3.8, -10.5], [-3.8, -10.5]]; foot = [[2.2, 0], [-2.2, 0]]; eye = 'wide'; }
+    else if (r === 'sleep' && st === 'work') {           // spí na zádech
+      g.rotate(-Math.PI / 2 * k.dir); g.translate(-4, -2);
+      eye = 'shut';
+    } else if (r === 'hold') { const w = Math.sin(t * .004 + k.ph) * .4; hand = [[1.8, -16 + w], [-1.8, -16 - w]]; foot = [[2.4, 0], [-2.4, 0]]; eye = 'effort'; bob = -.3; }
+    else if (r === 'pull') { lean = -2; hand = [[4.6, -8.2], [3.8, -7.6]]; foot = [[-2.6, 0], [1.8, 0]]; eye = 'effort'; }
+    else if (r === 'carry') { lean = .6; bob = Math.abs(Math.sin(ph * 2)) * .4; hand = [[1.2, -15], [-1, -15]]; foot = [[Math.sin(ph) * 2.2, 0], [-Math.sin(ph) * 2.2, 0]]; }
+    else if (r === 'wash') { hand = [[2.4, -14 + Math.sin(t * .006 + k.ph)], [-1.8, -7]]; }
+    const hip = [lean * .3, -6 - bob], neck = [lean, -11 - bob], head = [lean * 1.15, -13.6 - bob];
+    for (const f of foot) L(hip[0], hip[1], f[0], f[1]);
+    L(hip[0], hip[1], neck[0], neck[1]);
+    for (const hd of hand) L(neck[0], neck[1] + .6, hd[0], hd[1]);
+    g.fillStyle = '#2b2720'; g.beginPath(); g.arc(head[0], head[1], 2.3, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#e9e3d0';
+    if (eye === 'wide') { g.beginPath(); g.arc(head[0] + .9, head[1] - .2, .55, 0, TAU); g.fill(); }
+    else if (eye === 'shut' || eye === 'effort') { L(head[0] + .3, head[1], head[0] + 1.5, head[1] - .1); }
+    else { g.beginPath(); g.arc(head[0] + 1, head[1] - .1, .4, 0, TAU); g.fill(); }
+    if (k.item && st !== 'run' && st !== 'dive') {         // co nese nad hlavou
+      g.save(); g.translate((hand[0][0] + hand[1][0]) / 2, hand[0][1] - 2.2);
+      if (k.item === 'card') { g.fillStyle = '#f2b705'; g.fillRect(-4, -2.4, 8, 4.2); g.strokeStyle = '#101317'; g.lineWidth = .6; g.strokeRect(-4, -2.4, 8, 4.2); }
+      else { g.scale(k.dir, 1); g.fillStyle = '#e9e3d0'; g.font = '800 7px Inter,system-ui,sans-serif'; g.textAlign = 'center'; g.fillText(k.ch, 0, 2); }
+      g.restore();
+    }
+    g.restore();
+    if (st === 'freeze') { g.fillStyle = '#f2b705'; g.font = '800 11px ui-monospace,monospace'; g.fillText('!', k.x - 2, k.y - 24 * s); }
+    if (r === 'sleep' && st === 'work') { g.fillStyle = 'rgba(233,227,208,.6)'; g.font = '700 9px ui-monospace,monospace'; g.fillText('z', k.x + 8, k.y - 14 - Math.sin(t * .003) * 3); }
+  }
+  // Panáček, který neutíká: sedí s hrnkem a mává.
+  function boss(g, t) {
+    const W = under.w, H = under.h, x = W * .3, y = H * .64, s = W < 700 ? 1.6 : 2.1;
+    g.save(); g.translate(x, y); g.scale(s, s);
+    g.strokeStyle = '#e9e3d0'; g.lineCap = g.lineJoin = 'round'; g.lineWidth = 1.5;
+    const L = (a, b, c, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); };
+    L(0, -4, 4, -3.4); L(4, -3.4, 5.5, 0); L(0, -4, 3.4, -2.8); L(3.4, -2.8, 4.6, 0);     // nohy (sedí)
+    L(0, -4, -.6, -9.5);
+    const wave = under.exposed ? Math.sin(t * .012) * 1.6 : 0;
+    L(-.6, -9, 3.2, -8); L(3.2, -8, 3.4, -10);                                          // ruka s hrnkem
+    L(-.6, -9, -3 + wave * .3, -13 + wave);                                              // mává
+    g.fillStyle = '#ece6d5'; g.fillRect(2.4, -11.4, 2.2, 2.2);
+    g.fillStyle = '#2b2720'; g.beginPath(); g.arc(-.9, -12, 2.4, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = TEAL; g.beginPath(); g.arc(-.9, -12, 2.45, Math.PI * 1.1, Math.PI * 1.9); g.closePath(); g.fill();
+    g.fillStyle = '#e9e3d0'; g.beginPath(); g.arc(0, -11.8, .45, 0, TAU); g.fill();
+    g.restore();
+    if (under.exposed) { g.fillStyle = '#e9e3d0'; g.font = '800 12px ui-monospace,monospace'; g.textAlign = 'center'; g.fillText(under.vi === UNDER_N.length - 1 ? 'zůstal jsem jen já' : 'ahoj', x, y - 36 * (s / 2.1)); g.textAlign = 'left'; }
+  }
+  function underLoop(now) {
+    const dt = Math.min(48, now - under.last); under.last = now; under.t += dt;
+    const W = under.w, H = under.h, g = under.g, a = under.a, open = Math.sin(rad(a));
+    // odkrytí: poprvé, když se deska zvedne nad 20°
+    if (!under.exposed && a > 20 && a < 160) {
+      under.exposed = true; under.visits++; save();
+      for (const k of under.kids) {
+        const d = under.light > 0 ? (W - k.x) / W : k.x / W;
+        k.tf = under.t + 120 + d * 380 + rand(0, 160) + (k.r === 'sleep' ? 1300 : 0);
+        k.st = k.r === 'sleep' ? 'work' : 'freeze';
+      }
+      if (under.kids.length) snd('chi');
+    }
+    under.peak = Math.max(under.peak || 0, open);
+    const closing = under.exposed && under.peak > .75 && open < .55;   // deska už byla nahoře a zase klesá
+    for (const k of under.kids) {
+      if (k.st === 'gone') continue;
+      if ((k.st === 'freeze' || (k.r === 'sleep' && k.st === 'work')) && under.exposed && under.t > k.tf) {
+        k.st = 'run';
+        const ex = under.light > 0 ? -40 : W + 40, ey = k.y < H / 2 ? -40 : H + 40;   // od světla, nebo nejkratší cestou ven
+        const tx = Math.abs(k.x - ex) < Math.abs(k.y - ey) * 1.6 ? ex : k.x + rand(-80, 80), ty = tx === ex ? k.y + rand(-60, 60) : ey;
+        const d = Math.hypot(tx - k.x, ty - k.y) || 1;
+        k.vx = (tx - k.x) / d * k.sp; k.vy = (ty - k.y) / d * k.sp; k.dir = k.vx >= 0 ? 1 : -1;
+        if (k.item) { under.items.push({ x: k.x, y: k.y, item: k.item, ch: k.ch, a: rand(-.6, .6) }); k.item = null; }
+      }
+      if (k.st === 'run' || k.st === 'dive') {
+        k.x += k.vx * dt / 1000; k.y += k.vy * dt / 1000;
+        if (k.st === 'run' && (k.x < -30 || k.x > W + 30 || k.y < -30 || k.y > H + 40)) { k.st = 'gone'; under.fled = performance.now(); k.gt = under.t; }
+        if (k.st === 'dive' && Math.hypot(k.x - k.hx, k.y - k.hy) < 20) k.st = 'gone';
+      }
+    }
+    // podržená deska: po chvíli někteří opatrně vykukují od krajů
+    if (under.exposed && !closing && under.kids.length && under.kids.every(k => k.st === 'gone' || k.st === 'peek')) {
+      const quiet = under.kids.filter(k => k.st === 'gone' && under.t - (k.gt || 0) > 1600);
+      if (quiet.length && under.kids.filter(k => k.st === 'peek').length < 5 && Math.random() < dt / 700) {
+        const k = quiet[Math.floor(rand(0, quiet.length))], side = Math.floor(rand(0, 3));
+        Object.assign(k, { st: 'peek', pe: side, x: side === 0 ? 6 : side === 1 ? W - 6 : rand(W * .1, W * .9), y: side === 2 ? H - 2 : rand(H * .2, H * .9), dir: side === 1 ? -1 : 1 });
+      }
+    }
+    // deska klesá: kdo je venku, vrhne se zpátky pod ni
+    if (closing) for (const k of under.kids) if (k.st === 'peek' || k.st === 'run' || k.st === 'freeze') {
+      k.st = 'dive';
+      const d = Math.hypot(k.hx - k.x, k.hy - k.y) || 1;
+      k.vx = (k.hx - k.x) / d * 700; k.vy = (k.hy - k.y) / d * 700; k.dir = k.vx >= 0 ? 1 : -1;
+    }
+    // kreslení
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (!under.floor) under.floor = drawFloor();
+    g.drawImage(under.floor, 0, 0);
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const v = under.vi || 0;
+    if (v === UNDER_N.length - 2) {                // cedule
+      g.save(); g.translate(W * .34, H * .5);
+      g.fillStyle = '#8a5a2b'; g.fillRect(-2, -10, 4, 46);
+      g.fillStyle = '#e9e3d0'; g.fillRect(-46, -34, 92, 28); g.strokeStyle = '#101317'; g.lineWidth = 2; g.strokeRect(-46, -34, 92, 28);
+      g.fillStyle = '#c0392b'; g.font = '800 13px ui-monospace,monospace'; g.textAlign = 'center'; g.fillText('NEZVEDAT!', 0, -15); g.restore();
+    }
+    if (v === UNDER_N.length - 1) {   // vzkaz
+      const nw = Math.min(240, W * .44), ns = nw / 240;
+      g.save(); g.translate(W * .25, H * .42); g.rotate(-.06); g.scale(ns, ns);
+      g.fillStyle = '#f3ecd8'; g.fillRect(-120, -34, 240, 64); g.strokeStyle = 'rgba(0,0,0,.3)'; g.strokeRect(-120, -34, 240, 64);
+      g.fillStyle = '#2b2720'; g.font = '700 12px ui-monospace,monospace'; g.textAlign = 'center';
+      g.fillText('Odstěhovali jsme se', 0, -10); g.fillText('kvůli hluku.', 0, 7); g.font = '600 10px ui-monospace,monospace'; g.fillText('Ti zespodu', 50, 24);
+      g.restore();
+    }
+    if (v < UNDER_N.length - 1 || under.kids.length) {    // šňůra s prádlem v levém horním rohu
+      g.strokeStyle = 'rgba(233,227,208,.5)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(W * .03, H * .2); g.quadraticCurveTo(W * .13, H * .24, W * .23, H * .2); g.stroke();
+      ['#c0392b', '#6cc7f5', '#f2b705', '#e9e3d0'].forEach((c, i) => { g.fillStyle = c; g.fillRect(W * (.06 + i * .045), H * .215 + Math.sin(i) * 2, 8, 10); });
+    }
+    for (const it of under.items) {
+      g.save(); g.translate(it.x, it.y); g.rotate(it.a);
+      if (it.item === 'card') { g.fillStyle = '#f2b705'; g.fillRect(-6, -4, 12, 7); }
+      else { g.fillStyle = '#e9e3d0'; g.font = '800 11px Inter,system-ui,sans-serif'; g.fillText(it.ch, -4, 4); }
+      g.restore();
+    }
+    boss(g, under.t);
+    for (const k of under.kids) {
+      if (k.st === 'gone') continue;
+      if (k.st === 'peek') {                       // jen hlava zpoza kraje okna
+        g.save(); g.beginPath(); g.rect(0, 0, W, H); g.clip();
+        const s = k.s, px = k.pe === 0 ? -6 * s + 6 : k.pe === 1 ? W + 6 * s - 6 : k.x, py = k.pe === 2 ? H + 12 * s : k.y;
+        g.translate(px, py); g.scale(k.dir * s, s);
+        g.fillStyle = '#2b2720'; g.strokeStyle = '#e9e3d0'; g.lineWidth = 1.5;
+        g.beginPath(); g.arc(k.pe === 2 ? 0 : 2, k.pe === 2 ? -11 : -13.6, 2.3, 0, TAU); g.fill(); g.stroke();
+        g.fillStyle = '#e9e3d0'; g.beginPath(); g.arc(k.pe === 2 ? .9 : 3, k.pe === 2 ? -11.2 : -13.8, .5, 0, TAU); g.fill();
+        g.restore();
+        continue;
+      }
+      mini(g, k, under.t);
+    }
+    // světlo z té strany, kde se deska zvedla; zbytek je ještě ve stínu
+    const lg = g.createLinearGradient(under.light > 0 ? W : 0, 0, under.light > 0 ? 0 : W, 0);
+    lg.addColorStop(0, `rgba(0,0,0,${(.55 - .5 * open).toFixed(3)})`); lg.addColorStop(1, `rgba(0,0,0,${(.85 - .45 * open).toFixed(3)})`);
+    g.fillStyle = lg; g.fillRect(0, 0, W, H);
+    under.raf = requestAnimationFrame(underLoop);
+  }
   function turnStart(e) {
     if (e.button > 0 || turn.drag) return;
     cancelAnimationFrame(turn.anim);
@@ -3250,14 +3485,14 @@ html.pnk-turning .pnk-ply{display:block}
     const tools = Object.values(items).filter(it => it.state === 'belt').map(it => it.id);
     progress();
     const h1s = h1.el ? { s: h1.slots.map(s => s.cur), f: h1.fallen.filter(L => L.fk && L.st !== 'gone').map(L => [L.ch, L.fk, +L.fr.toFixed(4), Math.round(L.a)]) } : undefined;
-    return { done: fin.done, lead: leadSave(), mm: mmSave(), h1: h1s, visor: fig.novisor ? 0 : 1, more: tools, holes: holes.map(h => [+h.fx.toFixed(4), Math.round(h.y), 2]), mute: audio.mute, sec: { h2: sec.h2, verbs: sec.verbs, open: sec.open, cut: sec.cut, off: sec.off }, ts: Date.now() };
+    return { ub: under.visits, done: fin.done, lead: leadSave(), mm: mmSave(), h1: h1s, visor: fig.novisor ? 0 : 1, more: tools, holes: holes.map(h => [+h.fx.toFixed(4), Math.round(h.y), 2]), mute: audio.mute, sec: { h2: sec.h2, verbs: sec.verbs, open: sec.open, cut: sec.cut, off: sec.off }, ts: Date.now() };
   }
   function onCut(f, x, y) {
     lastBreak = performance.now();
     if (f && pl.cuts.length >= 3 && items.drill.state === 'hidden') landItem(items.drill, f, x, y);
   }
   function initExtra(saved) {
-    setMute(!!saved.mute); fig.novisor = saved.visor === 0; fin.done = saved.done || 0;
+    setMute(!!saved.mute); fig.novisor = saved.visor === 0; fin.done = saved.done || 0; under.visits = saved.ub || 0;
     if (fin.done) belt.classList.add('is-gold');
     for (const n of saved.more || []) if (items[n]) { items[n].state = 'belt'; fillItem(items[n]); }
     const w = root.scrollWidth;
@@ -4444,7 +4679,7 @@ html.pnk-t-iron .hero .lead{outline:2px dashed #f2b705;outline-offset:6px}
       give: n => { if (items[n]) { items[n].state = 'belt'; fillItem(items[n]); save(); } },
       use: n => useTool(n || null),
       hole: (x, y) => addHole(x + scrollX, y + scrollY, true),
-      rub: v => flip(v), turn: a => { if (!turn.busy) turnBegin(); setTurn(a); }, done: s => turnFinish(s ? 1 : 0),
+      under: () => ({ visits: under.visits, kids: under.kids.map(k => k.st).join(',') }), rub: v => flip(v), turn: a => { if (!turn.busy) turnBegin(); setTurn(a); }, done: s => turnFinish(s ? 1 : 0),
       items: () => Object.fromEntries(Object.values(items).map(it => [it.id, it.state])),
       snip: name => snip([...doc.querySelectorAll('.index-tags .tag')].find(t => t.textContent.trim() === name), true),
       tool: v => toggleTool(v),
