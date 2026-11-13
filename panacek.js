@@ -1421,7 +1421,7 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     vzkazy: [
       ['Práce', 'Jasně.cz', 'https://jasne.cz/'],
       ['Nová hračka', 'made4fun', 'https://made4fun.eu/'],
-      ['Newsletter', 'Adent', 'https://adent.substack.com/'],
+      ['Newsletter', 'Kladu odpory', 'https://adent.substack.com/'],
       ['Archiv textů', 'Den 1', 'https://den1.cz/'],
     ],
   };
