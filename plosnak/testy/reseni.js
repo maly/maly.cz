@@ -45,4 +45,45 @@ module.exports = {
       { program: ['zvedni', 'krok', 'krok', 'skoc', 'krok', 'poloz'], duvod: 'konec', zprava: /válí/ },
     ],
   },
+  '2.1': {
+    reference: [['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]],
+    chybna: [
+      { program: [['opakuj', 3, ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]], zprava: /V přívodu zůstal/ },
+      { program: [['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vlevo', 'vlevo', 'krok', 'krok']]], duvod: 'pad' },
+      { program: [['stale', ['vpravo', 'vpravo']]], duvod: 'usnul' },
+    ],
+  },
+  '2.2': {
+    reference: [['stale', [
+      'zvedni', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz',
+      'vlevo', ['opakuj', 3, ['krok', 'vlevo', 'krok', 'vpravo']], 'vpravo',
+    ]]],
+    chybna: [
+      { program: ['zvedni', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz'], zprava: /V přívodu zůstal/ },
+      { program: [['stale', ['zvedni', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']]]]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz', 'vlevo', ['opakuj', 3, ['krok', 'vlevo', 'krok', 'vpravo']]]]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', ['opakuj', 2, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz']]], duvod: 'pad' },
+    ],
+  },
+  '2.3': {
+    reference: [['stale', ['zvedni', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'krok']]],
+    alternativy: [[['opakuj', 6, ['zvedni', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'krok']]]],
+    chybna: [
+      { program: [['opakuj', 3, ['zvedni', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'krok']]], zprava: /Na pásce zůstal/ },
+      // po pásu patic se dá jít taky, ale za šestou patici už cestička nevede
+      { program: [['stale', ['zvedni', 'vpravo', 'krok', 'poloz', 'vlevo', 'krok', 'vlevo', 'krok', 'vpravo']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'krok', 'poloz']]], zprava: /Rozsypal/ },
+      { program: [['stale', ['zvedni', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'krok', 'krok']]], zprava: /Patice se mají osazovat popořadě|Na pásce/ },
+    ],
+  },
+  '2.4': {
+    reference: [['opakuj', 4, ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo']]],
+    chybna: [
+      { program: [['opakuj', 4, ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz']]], zprava: /válí/ },
+      { program: [['opakuj', 4, ['krok', 'krok', 'krok', 'zvedni']]], duvod: 'pad' },
+      { program: [['opakuj', 4, ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo']]], zprava: /válí/ },
+      { program: [['stale', ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo']]], duvod: 'usnul' },
+    ],
+  },
 };

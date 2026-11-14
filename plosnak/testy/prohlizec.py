@@ -130,6 +130,7 @@ def dotyk(cdp, typ, x, y):
 
 
 def tukni(cdp, page, sel):
+    page.locator(sel).scroll_into_view_if_needed()
     b = page.locator(sel).bounding_box()
     x, y = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2
     dotyk(cdp, 'touchStart', x, y); dotyk(cdp, 'touchEnd', x, y)
@@ -208,7 +209,7 @@ def levely(p):
     print('Chromium desktop: postup levely 1.1 až 1.4')
     b = p.chromium.launch()
     ctx, page = otevri(b, viewport={'width': 1280, 'height': 800})
-    over(page.locator('#levely button:disabled').count() == 3, 'zamčené 1.2 až 1.4')
+    over(page.locator('#levely button:disabled').count() == page.locator('#levely button').count() - 1, 'zamčené všechny kromě 1.1')
     for i, (lid, prg) in enumerate(RESENI.items()):
         over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
         page.screenshot(path=f'{SNIMKY}/l-{lid}-start.png')
@@ -228,7 +229,7 @@ def levely(p):
         page.screenshot(path=f'{SNIMKY}/l-{lid}-splneno.png')
         if i < 3:
             page.click('[data-akce="dalsi"]')
-    over(page.locator('#levely .hotovo').count() == 4, 'všechny levely označené jako splněné')
+    over(page.locator('#levely .hotovo').count() == 4, 'levely kapitoly 1 označené jako splněné')
     # 1.4: skok o krok dřív = pád
     page.click('[data-akce="zpet"]')
     page.click('#vymaz')
@@ -321,7 +322,135 @@ def mobil_dlouhy(p):
     ctx.close(); b.close()
 
 
+RESENI2 = {
+    '2.1': [['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]],
+    '2.2': [['stale', ['zvedni', ['opakuj', 3, ['krok', 'vpravo', 'krok', 'vlevo']], 'poloz',
+                       'vlevo', ['opakuj', 3, ['krok', 'vlevo', 'krok', 'vpravo']], 'vpravo']]],
+    '2.3': [['stale', ['zvedni', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'krok']]],
+    '2.4': [['opakuj', 4, ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo']]],
+}
+
+
+def normal(prg):
+    out = []
+    for u in prg:
+        if isinstance(u, str):
+            out.append({'op': u})
+        elif u[0] == 'opakuj':
+            out.append({'op': 'opakuj', 'n': u[1], 'telo': normal(u[2])})
+        else:
+            out.append({'op': u[0], 'telo': normal(u[1])})
+    return out
+
+
+def sestav(page, prg, klik):
+    """Složí program přes rozhraní: paleta, výběr počtu, klepnutí na patu smyčky."""
+    for u in prg:
+        if isinstance(u, str):
+            klik(f'#paleta .blok[data-op="{u}"]')
+            continue
+        klik(f'#paleta .blok[data-op="{u[0]}"]')
+        sid = page.get_attribute('#program .hlava.vybrany', 'data-id')
+        if u[0] == 'opakuj':
+            klik(f'#program .hlava[data-id="{sid}"] .pocet-n')
+            klik(f'#program .hlava[data-id="{sid}"] .volba-n [data-n="{u[1]}"]')
+        sestav(page, u[2] if u[0] == 'opakuj' else u[1], klik)
+        klik(f'#program .pata[data-id="{sid}"]')
+
+
+ODEMCENO = """localStorage.setItem('malycz.plosnak.v1', JSON.stringify({aktualni: '2.1', levely: {
+  '1.1': {splneno: true}, '1.2': {splneno: true}, '1.3': {splneno: true}, '1.4': {splneno: true}}}))"""
+
+
+def kapitola2(p):
+    print('Chromium desktop: kapitola 2')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 900})
+    page.evaluate(ODEMCENO)
+    page.reload(); page.wait_for_function('window.Plosnak')
+    for i, (lid, prg) in enumerate(RESENI2.items()):
+        over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
+        sestav(page, prg, page.click)
+        over(page.evaluate('Plosnak.program') == normal(prg), f'{lid}: program složený přes rozhraní')
+        page.screenshot(path=f'{SNIMKY}/k2-{lid}-program.png')
+        if lid == '2.2':
+            for _ in range(4):
+                page.click('#krok'); page.wait_for_timeout(450)
+            over(page.locator('#program .smycka.bezi-smycka').count() == 2, '2.2: obě běžící smyčky zvýrazněné')
+            over(page.inner_text('#program .smycka .smycka .kolo') == '1/3', '2.2: počítadlo kola vnitřní smyčky')
+            page.screenshot(path=f'{SNIMKY}/k2-2.2-krokovani.png')
+            page.click('#zastav')
+        page.click('#rychlost [data-r="4"]')
+        page.click('#spust')
+        page.wait_for_timeout(1500)
+        page.screenshot(path=f'{SNIMKY}/k2-{lid}-beh.png')
+        page.click('#rychlost [data-r="0"]')
+        pockej_konec(page, 15000)
+        over(page.evaluate('Plosnak.beh.konec.uspech'), f'{lid}: referenční řešení uspěje')
+        page.wait_for_selector('#vysledek:not([hidden])', timeout=3000)
+        page.screenshot(path=f'{SNIMKY}/k2-{lid}-splneno.png')
+        if i < 3:
+            page.click('[data-akce="dalsi"]')
+    # přetažení myší do těla smyčky a přesun smyčky
+    page.click('[data-akce="zpet"]')
+    page.click('#vymaz')
+    page.click('#paleta .blok[data-op="opakuj"]')
+    page.click('#paleta .blok[data-op="krok"]')
+    sid = page.get_attribute('#program .smycka', 'data-id')
+    page.click(f'#program .pata[data-id="{sid}"]')
+    page.click('#paleta .blok[data-op="poloz"]')
+    src = page.locator('#paleta .blok[data-op="zvedni"]').bounding_box()
+    dst = page.locator('#program .smycka .telo .blok').first.bounding_box()
+    page.mouse.move(src['x'] + 20, src['y'] + 20); page.mouse.down()
+    page.mouse.move(src['x'] - 80, src['y'] + 40, steps=4)
+    page.mouse.move(dst['x'] + 40, dst['y'] + dst['height'] + 1, steps=8)
+    page.screenshot(path=f'{SNIMKY}/k2-tah-do-smycky.png')
+    page.mouse.up()
+    over(page.evaluate('Plosnak.program') == normal([['opakuj', 2, ['krok', 'zvedni']], 'poloz']), 'tah z palety do těla smyčky')
+    h = page.locator('#program .smycka > .hlava').bounding_box()
+    last = page.locator('#program > li.blok').last.bounding_box()
+    page.mouse.move(h['x'] + 60, h['y'] + 20); page.mouse.down()
+    page.mouse.move(h['x'] + 60, h['y'] + 60, steps=4)
+    page.mouse.move(last['x'] + 60, last['y'] + last['height'] + 2, steps=8)
+    page.mouse.up()
+    over(page.evaluate('Plosnak.program') == normal(['poloz', ['opakuj', 2, ['krok', 'zvedni']]]), 'přesun celé smyčky')
+    # smazání smyčky smaže i obsah
+    page.click('#program .smycka > .hlava .nazev')
+    page.click('#program .smycka > .hlava .smaz')
+    over(page.evaluate('Plosnak.program') == normal(['poloz']), 'smazání smyčky i s obsahem')
+    ctx.close(); b.close()
+
+
+def kapitola2_mobil(p):
+    print('Chromium mobil 390: smyčky dotykem (2.2)')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 390, 'height': 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page.evaluate(ODEMCENO.replace("aktualni: '2.1'", "aktualni: '2.2'").replace("'1.4': {splneno: true}", "'1.4': {splneno: true}, '2.1': {splneno: true}"))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    cdp = ctx.new_cdp_session(page)
+    def klik(sel):
+        page.locator(sel).scroll_into_view_if_needed()
+        tukni(cdp, page, sel)
+    sestav(page, RESENI2['2.2'], klik)
+    over(page.evaluate('Plosnak.program') == normal(RESENI2['2.2']), 'mobil: vnořený program ťukáním')
+    sirka = page.evaluate('document.documentElement.scrollWidth')
+    over(sirka <= 390, f'mobil: bez vodorovného posuvníku ({sirka} px)')
+    page.evaluate('window.scrollTo(0, 0)')
+    page.screenshot(path=f'{SNIMKY}/k2-m-program.png', full_page=True)
+    klik('#program > .smycka > .telo > li:nth-child(2) > .hlava .pocet-n')
+    page.screenshot(path=f'{SNIMKY}/k2-m-volba.png', full_page=True)
+    klik('#program > .smycka > .telo > li:nth-child(2) > .hlava .volba-n [data-n="3"]')
+    page.evaluate('window.scrollTo(0, 0)')
+    klik('#rychlost [data-r="0"]')
+    klik('#spust')
+    pockej_konec(page, 15000)
+    over(page.evaluate('Plosnak.beh.konec.uspech'), 'mobil: 2.2 uspěje')
+    ctx.close(); b.close()
+
+
 with sync_playwright() as p:
+    kapitola2(p)
+    kapitola2_mobil(p)
     desktop(p)
     levely(p)
     mobil_dlouhy(p)

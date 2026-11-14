@@ -1,7 +1,8 @@
 /*
  * Plošňák: simulace světa a interpret bloků. Bez DOM, běží v prohlížeči i v Node.
  *
- * Mapa levelu: '#' cestička, '.' mezera, 'X' překážka, 'P' přívod, 'V' výstup.
+ * Mapa levelu: '#' cestička, '.' mezera, 'X' překážka, 'P' přívod, 'V' výstup,
+ * 'R' páska se součástkami (zvednutí z prázdné pásky = konec směny), 'O' patice.
  * Přívod a výstup jsou políčka cestičky; panáček na nich stojí a zvedá / pokládá.
  * Zásobník přívodu a přihrádka výstupu se kreslí na sousední políčko ve směru `strana`.
  *
@@ -16,6 +17,10 @@
 
   const SMERY = [[0, -1], [1, 0], [0, 1], [-1, 0]];
   const SMER = { sever: 0, vychod: 1, jih: 2, zapad: 3 };
+  const STRANY = {
+    sever: [0, -1], vychod: [1, 0], jih: [0, 1], zapad: [-1, 0],
+    severovychod: [1, -1], jihovychod: [1, 1], jihozapad: [-1, 1], severozapad: [-1, -1],
+  };
   const MAX_TAKTU = 999;
   const POJISTKA = 10000;
 
@@ -59,15 +64,20 @@
     const bunky = def.mapa.map(r => r.split(''));
     const vyska = bunky.length, sirka = bunky[0].length;
     let privod = null, vystup = null;
+    const paska = [], patice = [];
     for (let y = 0; y < vyska; y++) for (let x = 0; x < sirka; x++) {
-      if (bunky[y][x] === 'P') privod = { x, y };
-      if (bunky[y][x] === 'V') vystup = { x, y };
+      const c = bunky[y][x];
+      if (c === 'P') privod = { x, y };
+      if (c === 'V') vystup = { x, y };
+      if (c === 'R') paska.push({ x, y });
+      if (c === 'O') patice.push({ x, y });
     }
+    const strana = (pos, def) => pos && Object.assign(pos, { strana: SMER[def || 'sever'], posun: STRANY[def || 'sever'] });
     const start = def.start || {};
     return Object.assign({}, def, {
-      sirka, vyska, bunky,
-      privodPos: privod && Object.assign(privod, { strana: SMER[(def.privod || {}).strana || 'sever'] }),
-      vystupPos: vystup && Object.assign(vystup, { strana: SMER[(def.vystup || {}).strana || 'sever'] }),
+      sirka, vyska, bunky, paska_: paska, patice,
+      privodPos: strana(privod, (def.privod || {}).strana),
+      vystupPos: strana(vystup, (def.vystup || {}).strana),
       startPos: {
         x: start.x != null ? start.x : privod.x,
         y: start.y != null ? start.y : privod.y,
@@ -82,18 +92,24 @@
     if (x < 0 || y < 0 || x >= level.sirka || y >= level.vyska) return '.';
     return level.bunky[y][x];
   }
-  const jeCesta = c => c === '#' || c === 'P' || c === 'V';
+  const jeCesta = c => c === '#' || c === 'P' || c === 'V' || c === 'R' || c === 'O';
 
   // Zadání testu i (0.. viditelná, pak skrytá). Ze semínka, takže opakovatelné.
   function zadani(level, i) {
     const r = nahoda(hashText(level.id) + i * 7919);
-    const p = level.privod || {};
-    const [od, do_] = p.pocet || [1, 1];
-    const n = od + Math.floor(r() * (do_ - od + 1));
-    const druhy = Array.isArray(p.druh) ? p.druh : [p.druh || 'propojka'];
-    const polozky = [];
-    for (let k = 0; k < n; k++) polozky.push({ id: k, druh: druhy[Math.floor(r() * druhy.length)] });
-    return { privod: polozky };
+    let id = 0;
+    const generuj = p => {
+      const [od, do_] = p.pocet || [1, 1];
+      const n = od + Math.floor(r() * (do_ - od + 1));
+      const druhy = Array.isArray(p.druh) ? p.druh : [p.druh || 'propojka'];
+      const out = [];
+      for (let k = 0; k < n; k++) out.push({ id: id++, druh: druhy[Math.floor(r() * druhy.length)] });
+      return out;
+    };
+    const privod = level.privodPos ? generuj(level.privod || {}) : [];
+    const podlaha = (level.podlaha || []).map(p => ({ x: p.x, y: p.y, polozka: { id: id++, druh: p.druh || 'propojka' } }));
+    if (level.paska) generuj(level.paska).forEach((p, i) => podlaha.push({ x: level.paska_[i].x, y: level.paska_[i].y, polozka: p }));
+    return { privod, podlaha };
   }
 
   // ---------- stav ----------
@@ -104,9 +120,9 @@
       x: s.x, y: s.y, smer: s.smer,
       drzi: null,
       privod: zad.privod.map(p => Object.assign({}, p)),
-      celkem: zad.privod.length,
+      celkem: zad.privod.length + zad.podlaha.length,
       vystup: [],
-      podlaha: {},
+      podlaha: Object.fromEntries(zad.podlaha.map(p => [klic(p.x, p.y), Object.assign({}, p.polozka)])),
       rozsypano: [],
       takt: 0,
       konec: null,
@@ -133,7 +149,7 @@
       const ram = m.zasobnik[m.zasobnik.length - 1];
       if (!ram) return null;
       if (ram.i >= ram.seznam.length) {
-        if (ram.uzel && (ram.uzel.op === 'stale' || --ram.zbyva > 0)) { ram.i = 0; continue; }
+        if (ram.uzel && (ram.uzel.op === 'stale' || --ram.zbyva > 0)) { ram.i = 0; ram.kolo = (ram.kolo || 0) + 1; continue; }
         m.zasobnik.pop();
         continue;
       }
@@ -151,7 +167,12 @@
   }
 
   // Uzly, které právě běží (smyčky a akční blok), pro podsvícení v rozhraní.
-  function aktivniUzly(m) { return m.zasobnik.filter(r => r.uzel).map(r => r.uzel.id); }
+  function aktivniUzly(m) {
+    return m.zasobnik.filter(r => r.uzel).map(r => ({
+      id: r.uzel.id, n: r.uzel.op === 'stale' ? 0 : r.uzel.n,
+      kolo: r.uzel.op === 'stale' ? (r.kolo || 0) + 1 : r.uzel.n - r.zbyva + 1,
+    }));
+  }
 
   const klic = (x, y) => x + ',' + y;
 
@@ -200,6 +221,12 @@
           break;
         }
         if (s.podlaha[k]) { s.drzi = s.podlaha[k]; delete s.podlaha[k]; ev.typ = 'zvedni'; ev.odkud = 'podlaha'; ev.polozka = s.drzi; break; }
+        if (bunka(level, s.x, s.y) === 'R') {          // prázdná páska: konec směny
+          s.takt--;
+          ev.typ = 'konecSmeny';
+          s.konec = vyhodnot(level, s, 'konecSmeny');
+          break;
+        }
         ev.typ = 'hmat';
         break;
       }
@@ -236,8 +263,19 @@
     const chyby = [];
     if (s.rozsypano.length) chyby.push('Rozsypal součástky.');
     if (s.drzi) chyby.push('Směna skončila a panáček pořád drží ' + (s.drzi.druh === 'led' ? 'LED' : nazevDruhu(s.drzi.druh, 1).replace(/a$/, 'u')) + '.');
-    const naPodlaze = Object.keys(s.podlaha).length;
+    const lezi = Object.keys(s.podlaha).map(k => k.split(',').map(Number));
+    const naPasce = lezi.filter(([x, y]) => bunka(level, x, y) === 'R').length;
+    const vPaticich = lezi.filter(([x, y]) => bunka(level, x, y) === 'O').length;
+    const naPodlaze = lezi.length - naPasce - (level.kontrola === 'patice' ? vPaticich : 0);
+    if (naPasce) chyby.push('Na pásce ' + (naPasce === 1 ? 'zůstala ' : 'zůstaly ') + soucastky(naPasce) + '.');
     if (naPodlaze) chyby.push('Na desce se válí ' + soucastky(naPodlaze) + '.');
+    if (level.kontrola === 'patice') {
+      if (!chyby.length && s.privod.length) chyby.push('V přívodu ' + (s.privod.length === 1 ? 'zůstala ' : 'zůstaly ') + soucastky(s.privod.length) + '.');
+      if (!chyby.length && vPaticich !== s.celkem) chyby.push('Osazeno je ' + vPaticich + ' z ' + s.celkem + ' patic.');
+      if (!chyby.length && level.patice.slice(0, s.celkem).some(p => !s.podlaha[klic(p.x, p.y)]))
+        chyby.push('Patice se mají osazovat popořadě, bez mezer.');
+      return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
+    }
     if (s.privod.length) chyby.push('V přívodu ' + (s.privod.length === 1 ? 'zůstala ' : 'zůstaly ') + soucastky(s.privod.length) + '.');
     if (!chyby.length && s.vystup.length !== s.celkem) chyby.push('Na výstupu je ' + s.vystup.length + ' z ' + s.celkem + '.');
     return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
@@ -270,7 +308,7 @@
   }
 
   return {
-    SMERY, SMER, BLOKY, DRUHY, MAX_TAKTU,
+    SMERY, SMER, STRANY, BLOKY, DRUHY, MAX_TAKTU,
     nahoda, hashText, pripravLevel, bunka, jeCesta, zadani,
     novyStav, snimek, stroj, takt, spustTest, vyhodnotReseni, pocetBloku, nazevDruhu, ZPRAVY,
   };

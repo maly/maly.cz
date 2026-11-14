@@ -55,7 +55,7 @@
 
   // ---------- stav hry ----------
 
-  let level, program = [], vybrany = null, testIdx = 0;
+  let level, program = [], kurzor = null, volbaN = null, testIdx = 0;
   let rychlost = RYCHLOST[data.rychlost] != null ? data.rychlost : '1';
   let beh = null;     // { stav, stroj, bezi, hotovo, krokovani }
   let vis = null;     // { stav, pred, po, ev, t0, dur, poza, bublina }
@@ -90,12 +90,17 @@
   const stred = (x, y) => ({ x: stredX(x), y: stredY(y) });
   const zem = (x, y) => ({ x: stredX(x), y: stredY(y) + .16 * T });          // kde stojí nohy
   const naZemi = (x, y) => ({ x: stredX(x), y: stredY(y) + .3 * T });       // kam se pokládá
+  // Kam se pokládá: na pásce a v patici doprostřed, jinak k nohám.
+  function bodPolozeni(x, y) {
+    const c = S.bunka(level, x, y);
+    return c === 'R' || c === 'O' ? { x: stredX(x), y: stredY(y) + .02 * T } : naZemi(x, y);
+  }
   function bodPrivodu() {
-    const p = level.privodPos, [dx, dy] = S.SMERY[p.strana];
+    const p = level.privodPos, [dx, dy] = p.posun;
     return { x: stredX(p.x) + dx * .4 * T, y: stredY(p.y) + dy * .4 * T };
   }
   function bodVystupu() {
-    const v = level.vystupPos, [dx, dy] = S.SMERY[v.strana];
+    const v = level.vystupPos, [dx, dy] = v.posun;
     return { x: stredX(v.x + dx), y: stredY(v.y + dy) - .22 * T };
   }
 
@@ -157,6 +162,35 @@
       c.fillStyle = MASKA_T; c.strokeStyle = MED_BOK; c.lineWidth = 1;
       c.beginPath(); c.arc(cx, cy, .065 * T, 0, TAU); c.fill(); c.stroke();
     }
+    // páska se součástkami a patice
+    for (let y = 0; y < level.vyska; y++) for (let x = 0; x < level.sirka; x++) {
+      const b = S.bunka(level, x, y), cx = stredX(x), cy = stredY(y);
+      if (b === 'R') {
+        const h = .5 * T, x0 = cx - T / 2, y0 = cy - h / 2;
+        const vlevo = S.bunka(level, x - 1, y) === 'R', vpravo = S.bunka(level, x + 1, y) === 'R';
+        const l = vlevo ? x0 : x0 + .08 * T, r = vpravo ? x0 + T : x0 + T - .08 * T;
+        c.fillStyle = '#f1e7cc'; c.fillRect(l, y0, r - l, h);
+        c.strokeStyle = K; c.lineWidth = lw * .8;
+        c.beginPath(); c.moveTo(l, y0); c.lineTo(r, y0); c.moveTo(l, y0 + h); c.lineTo(r, y0 + h);
+        if (!vlevo) { c.moveTo(l, y0); c.lineTo(l, y0 + h); }
+        if (!vpravo) { c.moveTo(r, y0); c.lineTo(r, y0 + h); }
+        c.stroke();
+        c.fillStyle = '#b8ab88';
+        for (let k = 0; k < 3; k++) c.fillRect(x0 + (k + .3) * T / 3, y0 + .05 * T, .07 * T, .06 * T);
+        c.strokeStyle = 'rgba(16,19,23,.25)'; c.lineWidth = 1;
+        c.strokeRect(cx - .26 * T, cy - .12 * T, .52 * T, .26 * T);
+      }
+      if (b === 'O') {
+        const w = .62 * T, h = .38 * T;
+        c.fillStyle = 'rgba(16,19,23,.35)'; c.fillRect(cx - w / 2, cy - h / 2, w, h);
+        c.strokeStyle = POTISK; c.lineWidth = Math.max(1.5, T * .035);
+        c.strokeRect(cx - w / 2, cy - h / 2, w, h);
+        c.beginPath(); c.moveTo(cx - w / 2, cy - h * .15); c.lineTo(cx - w / 2 + .07 * T, cy - h * .15);
+        c.lineTo(cx - w / 2 + .07 * T, cy + h * .15); c.lineTo(cx - w / 2, cy + h * .15); c.stroke();
+        c.fillStyle = MED_S;
+        for (const sx of [-1, 1]) { c.beginPath(); c.arc(cx + sx * .2 * T, cy, .05 * T, 0, TAU); c.fill(); }
+      }
+    }
     // překážky
     for (let y = 0; y < level.vyska; y++) for (let x = 0; x < level.sirka; x++)
       if (S.bunka(level, x, y) === 'X') kresliPrekazku(c, stredX(x), stredY(y));
@@ -217,7 +251,7 @@
 
   function kresliPrivod(c, sn, skryjPrvni) {
     const p = level.privodPos; if (!p) return;
-    const [dx, dy] = S.SMERY[p.strana];
+    const [dx, dy] = p.posun;
     const bx = stredX(p.x + dx), by = stredY(p.y + dy) - .2 * T, lw = Math.max(1.5, T * .03);
     const ret = bodPrivodu();
     // skluz
@@ -247,7 +281,7 @@
 
   function kresliVystup(c, sn) {
     const v = level.vystupPos; if (!v) return;
-    const [dx, dy] = S.SMERY[v.strana];
+    const [dx, dy] = v.posun;
     const bx = stredX(v.x + dx), by = stredY(v.y + dy) - .2 * T, lw = Math.max(1.5, T * .03);
     const w = .86 * T, h = .52 * T, celo = .2 * T;
     c.lineWidth = lw; c.strokeStyle = K;
@@ -268,7 +302,7 @@
 
   function kresliPodlahu(c, sn) {
     for (const k in sn.podlaha) {
-      const [x, y] = k.split(',').map(Number), b = naZemi(x, y);
+      const [x, y] = k.split(',').map(Number), b = bodPolozeni(x, y);
       kresliPolozku(c, sn.podlaha[k].druh, b.x, b.y, .9, .25);
     }
     sn.rozsypano.forEach((r, i) => {
@@ -474,14 +508,14 @@
         break;
       }
       case 'zvedni': {
-        const src = ev.odkud === 'privod' ? bodPrivodu() : naZemi(z.x, z.y);
+        const src = ev.odkud === 'privod' ? bodPrivodu() : bodPolozeni(z.x, z.y);
         o.ruceCil = src;
         if (p < .45) { o.ruceK = ease(p / .45); o.polozka = null; o.nahoru = 0; }
         else { const k = ease((p - .45) / .55); o.ruceK = 1 - k; o.nahoru = k; o.polozka = ev.polozka; }
         break;
       }
       case 'poloz': case 'rozsyp': {
-        const dst = ev.kam === 'vystup' ? bodVystupu() : naZemi(z.x, z.y);
+        const dst = ev.kam === 'vystup' ? bodVystupu() : bodPolozeni(z.x, z.y);
         o.ruceCil = dst;
         if (p < .55) { const k = ease(p / .55); o.nahoru = 1 - k; o.ruceK = k; o.polozka = ev.polozka; }
         else { o.nahoru = 0; o.ruceK = 1 - ease((p - .55) / .45); o.polozka = null; }
@@ -512,8 +546,8 @@
     kresliPodlahu(g, sn);
     // zásobníky a panáček podle hloubky (co je níž, je blíž)
     const veci = [];
-    if (level.privodPos) veci.push([level.privodPos.y + S.SMERY[level.privodPos.strana][1], () => kresliPrivod(g, sn, false)]);
-    if (level.vystupPos) veci.push([level.vystupPos.y + S.SMERY[level.vystupPos.strana][1], () => kresliVystup(g, sn)]);
+    if (level.privodPos) veci.push([level.privodPos.y + level.privodPos.posun[1], () => kresliPrivod(g, sn, false)]);
+    if (level.vystupPos) veci.push([level.vystupPos.y + level.vystupPos.posun[1], () => kresliVystup(g, sn)]);
     let hlava = null;
     const py = f.visi ? (f.visi.y - OY) / T : (f.y - OY) / T - .5;
     veci.push([py, () => { hlava = f.visi ? kresliVisiciho(g, f.visi.x, f.visi.y, f.smer, now) : kresliPanacka(g, f.x, f.y, f.smer, f.o); }]);
@@ -660,12 +694,15 @@
   function vykresliLevely() {
     const nav = $('#levely'); nav.innerHTML = '';
     LEVELY.forEach((l, i) => {
+      if (i && l.kapitola !== LEVELY[i - 1].kapitola) nav.appendChild(el('span', 'predel'));
       const z = data.levely[l.id] || {}, b = el('button', 'tl lv' + (z.splneno ? ' hotovo' : ''), l.id);
       b.type = 'button'; b.dataset.level = l.id; b.disabled = !odemceno(i);
       b.title = l.nazev + (z.splneno ? ' (splněno)' : b.disabled ? ' (zamčeno)' : '');
       if (l.id === level.id) b.setAttribute('aria-current', 'step');
       nav.appendChild(b);
     });
+    const akt = nav.querySelector('[aria-current]');
+    if (akt) nav.scrollLeft = Math.max(0, akt.offsetLeft - nav.clientWidth / 2);
   }
 
   function dalsiLevel() { return LEVELY[LEVELY.findIndex(l => l.id === level.id) + 1] || null; }
@@ -708,16 +745,58 @@
     }
   }
 
+  // ---------- program: strom bloků ----------
+  // Kurzor určuje, kam se vloží blok klepnutím v paletě:
+  // { id, dovnitr: false } = za blok, { id, dovnitr: true } = na konec těla smyčky, null = na konec programu.
+
+  function najdi(id, seznam = program, rodic = null) {
+    for (let i = 0; i < seznam.length; i++) {
+      const u = seznam[i];
+      if (u.id === id) return { seznam, i, uzel: u, rodic };
+      if (u.telo) { const r = najdi(id, u.telo, u); if (r) return r; }
+    }
+    return null;
+  }
+  const obsahuje = (u, id) => u.id === id || (u.telo || []).some(c => obsahuje(c, id));
+
+  function mistoKurzoru() {
+    const f = kurzor && najdi(kurzor.id);
+    if (!f) return { seznam: program, i: program.length };
+    if (kurzor.dovnitr && f.uzel.telo) return { seznam: f.uzel.telo, i: f.uzel.telo.length };
+    return { seznam: f.seznam, i: f.i + 1 };
+  }
+
   function vykresliProgram() {
     const ol = $('#program'); ol.innerHTML = '';
     if (!program.length) ol.appendChild(el('li', 'prazdny', 'Klepni na blok v paletě, nebo ho sem přetáhni.'));
-    program.forEach((u, i) => {
+    let cislo = 0;
+    const smaz = '<button type="button" class="smaz" aria-label="Smazat blok">×</button>';
+    const uzelEl = u => {
       const b = S.BLOKY[u.op];
-      const li = el('li', 'blok b-' + b.druh + (u.id === vybrany ? ' vybrany' : ''),
-        `<span class="cislo">${i + 1}</span>${ikona(u.op)}<span class="nazev">${b.nazev}</span><button type="button" class="smaz" aria-label="Smazat blok">×</button>`);
-      li.dataset.id = u.id; li.tabIndex = 0;
-      ol.appendChild(li);
-    });
+      if (!b.telo) {
+        const li = el('li', 'blok b-' + b.druh + (kurzor && kurzor.id === u.id && !kurzor.dovnitr ? ' vybrany' : ''),
+          `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${b.nazev}</span>${smaz}`);
+        li.dataset.id = u.id; li.tabIndex = 0;
+        return li;
+      }
+      const li = el('li', 'smycka'); li.dataset.id = u.id;
+      const n = u.op === 'opakuj'
+        ? `<button type="button" class="pocet-n" aria-label="Počet opakování" aria-expanded="${volbaN === u.id}">${u.n}×</button>` : '';
+      const volba = volbaN === u.id
+        ? `<div class="volba-n" role="group" aria-label="Kolikrát">${[2, 3, 4, 5, 6, 7, 8, 9].map(k =>
+          `<button type="button" data-n="${k}" aria-pressed="${k === u.n}">${k}</button>`).join('')}</div>` : '';
+      const hlava = el('div', 'blok hlava b-rizeni' + (kurzor && kurzor.id === u.id && kurzor.dovnitr ? ' vybrany' : ''),
+        `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${u.op === 'stale' ? 'opakuj stále' : 'opakuj'}</span>${n}<span class="kolo"></span>${smaz}${volba}`);
+      hlava.dataset.id = u.id; hlava.tabIndex = 0;
+      const telo = el('ol', 'telo');
+      if (!u.telo.length) telo.appendChild(el('li', 'prazdne-telo', 'sem patří opakované bloky'));
+      u.telo.forEach(c => telo.appendChild(uzelEl(c)));
+      const pata = el('div', 'pata' + (kurzor && kurzor.id === u.id && !kurzor.dovnitr ? ' vybrany' : ''));
+      pata.dataset.id = u.id; pata.title = 'Vkládat za smyčku';
+      li.append(hlava, telo, pata);
+      return li;
+    };
+    program.forEach(u => ol.appendChild(uzelEl(u)));
     const n = S.pocetBloku(program);
     $('#pocet').textContent = n + ' / ' + level.cile.bloky;
     $('#pocet').title = bloku(n) + ', cíl nejvýš ' + level.cile.bloky;
@@ -726,9 +805,18 @@
   }
 
   function zvyrazni(ev) {
-    document.querySelectorAll('#program .blok.aktivni').forEach(e => e.classList.remove('aktivni'));
+    document.querySelectorAll('#program .aktivni').forEach(e => e.classList.remove('aktivni'));
+    document.querySelectorAll('#program .smycka.bezi-smycka').forEach(e => {
+      e.classList.remove('bezi-smycka'); e.querySelector(':scope > .hlava .kolo').textContent = '';
+    });
     if (!ev || !ev.id) return;
-    const e = document.querySelector(`#program .blok[data-id="${ev.id}"]`);
+    for (const s of ev.smycky || []) {
+      const e = document.querySelector(`#program li.smycka[data-id="${s.id}"]`);
+      if (!e) continue;
+      e.classList.add('bezi-smycka');
+      e.querySelector(':scope > .hlava .kolo').textContent = s.n ? `${s.kolo}/${s.n}` : `${s.kolo}.`;
+    }
+    const e = document.querySelector(`#program li.blok[data-id="${ev.id}"]`);
     if (!e) return;
     e.classList.add('aktivni');
     // Posouvá se jen vlastní posuvník programu (desktop), nikdy stránka: deska musí zůstat na očích.
@@ -775,22 +863,32 @@
     ulozProgram(); vykresliProgram();
   }
 
-  function vlozBlok(op, index) {
-    const u = novyUzel(op);
-    if (index == null) {
-      const i = program.findIndex(x => x.id === vybrany);
-      index = i < 0 ? program.length : i + 1;
-    }
-    program.splice(index, 0, u);
-    vybrany = u.id;
+  function vlozBlok(op, misto) {
+    const u = novyUzel(op), m = misto || mistoKurzoru();
+    m.seznam.splice(m.i, 0, u);
+    kurzor = { id: u.id, dovnitr: !!u.telo };
     zmenaProgramu();
   }
 
   function smazBlok(id) {
-    const i = program.findIndex(x => x.id === id);
-    if (i < 0) return;
-    program.splice(i, 1);
-    if (vybrany === id) vybrany = program[i - 1] ? program[i - 1].id : null;
+    const f = najdi(id);
+    if (!f) return;
+    f.seznam.splice(f.i, 1);
+    if (kurzor && obsahuje(f.uzel, kurzor.id)) {
+      const pred = f.seznam[f.i - 1];
+      kurzor = pred ? { id: pred.id, dovnitr: false } : f.rodic ? { id: f.rodic.id, dovnitr: true } : null;
+    }
+    zmenaProgramu();
+  }
+
+  function presunBlok(id, slot) {
+    const f = najdi(id);
+    if (!f || (slot.uzel && obsahuje(f.uzel, slot.uzel))) return;
+    f.seznam.splice(f.i, 1);
+    let i = slot.i;
+    if (slot.seznam === f.seznam && slot.i > f.i) i--;
+    slot.seznam.splice(i, 0, f.uzel);
+    kurzor = { id: f.uzel.id, dovnitr: false };
     zmenaProgramu();
   }
 
@@ -798,12 +896,35 @@
 
   let tah = null;
 
-  function radky() { return [...document.querySelectorAll('#program li.blok:not(.tazeny)')]; }
-  function indexVlozeni(y) {
-    const r = radky();
-    for (let i = 0; i < r.length; i++) { const b = r[i].getBoundingClientRect(); if (y < b.top + b.height / 2) return i; }
-    return r.length;
+  // Možná místa vložení: { seznam, i, y, x, uzel (smyčka, do které se vkládá) }.
+  function sloty(vyjma) {
+    const out = [], li = id => document.querySelector(`#program li[data-id="${id}"]`);
+    const projdi = (seznam, smycka) => {
+      const vid = seznam.filter(u => u.id !== vyjma);
+      for (const u of vid) {
+        const e = li(u.id), r = e.getBoundingClientRect();
+        out.push({ seznam, i: seznam.indexOf(u), y: r.top - 2, x: r.left, uzel: smycka });
+        if (u.telo) {
+          projdi(u.telo, u.id);
+          if (!u.telo.some(c => c.id !== vyjma)) {
+            const t = e.querySelector(':scope > ol.telo').getBoundingClientRect();
+            out.push({ seznam: u.telo, i: 0, y: t.top + t.height / 2, x: t.left, uzel: u.id });
+          }
+        }
+      }
+      if (vid.length) {
+        const last = vid[vid.length - 1], r = li(last.id).getBoundingClientRect();
+        out.push({ seznam, i: seznam.indexOf(last) + 1, y: r.bottom + 2, x: r.left, uzel: smycka });
+      }
+    };
+    projdi(program, null);
+    if (!program.some(u => u.id !== vyjma)) {
+      const r = $('#program').getBoundingClientRect();
+      out.push({ seznam: program, i: 0, y: r.top + 24, x: r.left + 8, uzel: null });
+    }
+    return out;
   }
+
   function nadProgramem(x, y) {
     const b = $('#panel-program').getBoundingClientRect(), o = 24;
     return x > b.left - o && x < b.right + o && y > b.top - o && y < b.bottom + o;
@@ -811,15 +932,17 @@
 
   function onDown(e) {
     if (e.button > 0 || tah) return;
+    if (e.target.closest('.smaz, .pocet-n, .volba-n')) return;
     const blok = e.target.closest('.blok');
-    if (!blok || e.target.closest('.smaz')) return;
+    if (!blok) return;
+    const zdroj = blok.closest('#paleta') ? 'paleta' : 'program';
     tah = {
-      zdroj: blok.closest('#paleta') ? 'paleta' : 'program',
-      op: blok.dataset.op, id: blok.dataset.id, el: blok,
+      zdroj, op: blok.dataset.op, id: blok.dataset.id,
+      el: blok.classList.contains('hlava') ? blok.parentElement : blok,
       x0: e.clientX, y0: e.clientY, pid: e.pointerId, aktivni: false,
     };
     // Prstem v programu se táhne až po podržení, jinak by řádky blokovaly posun stránky.
-    if (e.pointerType !== 'mouse' && tah.zdroj === 'program') {
+    if (e.pointerType !== 'mouse' && zdroj === 'program') {
       tah.ceka = setTimeout(() => {
         if (!tah || tah.aktivni) return;
         tah.ceka = null; zacniTah();
@@ -831,14 +954,17 @@
 
   function zacniTah() {
     tah.aktivni = true;
+    if (volbaN) { volbaN = null; vykresliProgram(); tah.el = document.querySelector(`#program [data-id="${tah.id}"]`) || tah.el; }
     const r = tah.el.getBoundingClientRect();
     const d = tah.el.cloneNode(true);
+    d.querySelectorAll('.vybrany, .aktivni').forEach(x => x.classList.remove('vybrany', 'aktivni'));
     d.classList.remove('vybrany', 'aktivni'); d.classList.add('duch');
     d.style.width = r.width + 'px';
     tah.dx = tah.x0 - r.left; tah.dy = tah.y0 - r.top;
     document.body.appendChild(d); tah.duch = d;
     if (tah.zdroj === 'program') tah.el.classList.add('tazeny');
-    tah.znacka = el('li', 'vkladani');
+    tah.znacka = el('div', 'vkladani');
+    $('#panel-program').appendChild(tah.znacka); tah.znacka.hidden = true;
     d.style.transform = `translate(${r.left}px, ${r.top}px)`;
     document.body.classList.add('tahne');
   }
@@ -856,15 +982,19 @@
     tah.duch.style.transform = `translate(${e.clientX - tah.dx}px, ${e.clientY - tah.dy}px)`;
     const nad = nadProgramem(e.clientX, e.clientY);
     tah.duch.classList.toggle('pryc', !nad && tah.zdroj === 'program');
+    const pr = $('#program .prazdny');
     if (nad) {
-      const i = indexVlozeni(e.clientY), r = radky(), ol = $('#program');
-      const pred = r[i] || null;
-      if (tah.znacka.nextSibling !== pred || tah.znacka.parentNode !== ol) ol.insertBefore(tah.znacka, pred);
-      const pr = ol.querySelector('.prazdny'); if (pr) pr.hidden = true;
-      tah.index = i;
+      const vse = sloty(tah.zdroj === 'program' ? tah.id : null);
+      let best = vse[0];
+      for (const s of vse) if (Math.abs(s.y - e.clientY) < Math.abs(best.y - e.clientY)) best = s;
+      tah.slot = best;
+      const p = $('#panel-program').getBoundingClientRect();
+      Object.assign(tah.znacka.style, { top: (best.y - p.top - 2) + 'px', left: (best.x - p.left) + 'px' });
+      tah.znacka.hidden = false;
+      if (pr) pr.hidden = true;
     } else {
-      tah.znacka.remove(); tah.index = null;
-      const pr = $('#program .prazdny'); if (pr) pr.hidden = false;
+      tah.slot = null; tah.znacka.hidden = true;
+      if (pr) pr.hidden = false;
     }
   }
 
@@ -876,17 +1006,18 @@
     if (!t.aktivni) {
       if (zrusit) return;
       if (t.zdroj === 'paleta') vlozBlok(t.op);
-      else { vybrany = t.id; vykresliProgram(); }
+      else {
+        const f = najdi(t.id);
+        kurzor = { id: t.id, dovnitr: !!(f && f.uzel.telo) };
+        volbaN = null; vykresliProgram();
+      }
       return;
     }
     t.duch.remove(); t.znacka.remove(); t.el.classList.remove('tazeny');
-    if (zrusit || t.index === undefined) { vykresliProgram(); return; }   // podržel a pustil bez pohybu
-    if (t.index != null) {
-      if (t.zdroj === 'paleta') vlozBlok(t.op, t.index);
-      else {
-        const i = program.findIndex(x => x.id === t.id), [u] = program.splice(i, 1);
-        program.splice(t.index, 0, u); vybrany = u.id; zmenaProgramu();
-      }
+    if (zrusit || t.slot === undefined) { vykresliProgram(); return; }   // podržel a pustil bez pohybu
+    if (t.slot) {
+      if (t.zdroj === 'paleta') vlozBlok(t.op, t.slot);
+      else presunBlok(t.id, t.slot);
     } else if (t.zdroj === 'program') smazBlok(t.id);
     else vykresliProgram();
   }
@@ -903,13 +1034,36 @@
     document.addEventListener('touchmove', e => { if (tah && tah.aktivni) e.preventDefault(); }, { passive: false });
     // klávesnice: Enter na bloku v paletě ho vloží
     $('#paleta').addEventListener('click', e => { const b = e.target.closest('.blok'); if (b && e.detail === 0) vlozBlok(b.dataset.op); });
-    $('#program').addEventListener('click', e => { const s = e.target.closest('.smaz'); if (s) smazBlok(s.closest('.blok').dataset.id); });
+    $('#program').addEventListener('click', e => {
+      const s = e.target.closest('.smaz');
+      if (s) { smazBlok(s.closest('[data-id]').dataset.id); return; }
+      const n = e.target.closest('.pocet-n');
+      if (n) { const id = n.closest('[data-id]').dataset.id; volbaN = volbaN === id ? null : id; vykresliProgram(); return; }
+      const k = e.target.closest('.volba-n button');
+      if (k) {
+        const f = najdi(k.closest('[data-id]').dataset.id);
+        if (f) f.uzel.n = +k.dataset.n;
+        volbaN = null; zmenaProgramu(); return;
+      }
+      const pata = e.target.closest('.pata');
+      if (pata) { kurzor = { id: pata.dataset.id, dovnitr: false }; volbaN = null; vykresliProgram(); }
+    });
+    document.addEventListener('pointerdown', e => {
+      if (volbaN && !e.target.closest('.volba-n, .pocet-n')) {
+        volbaN = null;                                     // bez překreslení, ať nezmizí cíl právě začínajícího tahu
+        document.querySelectorAll('#program .volba-n').forEach(x => x.remove());
+        document.querySelectorAll('#program .pocet-n').forEach(x => x.setAttribute('aria-expanded', 'false'));
+      }
+    }, true);
     $('#program').addEventListener('keydown', e => {
       const b = e.target.closest('.blok'); if (!b) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); smazBlok(b.dataset.id); }
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); vybrany = b.dataset.id; vykresliProgram(); }
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('button')) return;
+        e.preventDefault(); kurzor = { id: b.dataset.id, dovnitr: b.classList.contains('hlava') }; vykresliProgram();
+      }
     });
-    $('#vymaz').addEventListener('click', () => { program = []; vybrany = null; zmenaProgramu(); });
+    $('#vymaz').addEventListener('click', () => { program = []; kurzor = null; zmenaProgramu(); });
     $('#spust').addEventListener('click', () => (beh && beh.bezi ? pauza() : spust()));
     $('#krok').addEventListener('click', krokuj);
     $('#zastav').addEventListener('click', zastav);
@@ -948,7 +1102,8 @@
     $('#vysledek').hidden = true;
     const z = data.levely[level.id] || {};
     program = ocisti(z.program, level.bloky);
-    vybrany = program.length ? program[program.length - 1].id : null;
+    kurzor = program.length ? { id: program[program.length - 1].id, dovnitr: false } : null;
+    volbaN = null;
     testIdx = 0; beh = null; neuspechu = 0;
     vis = vychoziVis();
     document.title = `Plošňák ${level.id}: ${level.nazev}`;
