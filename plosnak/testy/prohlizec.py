@@ -627,6 +627,8 @@ def kontrola4(page, lid):
 KAP1_4 = KAP1_3 + ['4.1', '4.2', '4.3', '4.4']
 RESENI5 = {
     '5.1': ['zvedni', 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo', 'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
+    '5.2': ['zvedni', 'krok', ['kdyz', 'znacka:obracena', ['otoc'], []], 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo',
+            'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
 }
 
 

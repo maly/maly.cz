@@ -234,10 +234,10 @@
     };
     const privod = level.privodPos ? generuj(level.privod || {}) : [];
     // obvod: polarita značek, předem osazená deska s jedním spáleným kusem
-    const znacky = {}, cin = [];
+    const znacky = {}, cin = [], rz = nahoda(hashText(level.id + ':znacky') + i * 104729);
     for (const o of level.obvod || []) {
       const k = o.x + ',' + o.y;
-      znacky[k] = o.polarita === 'nahodna' ? (r() < .5 ? 1 : 0) : (o.polarita | 0);
+      znacky[k] = o.polarita === 'nahodna' ? (i < 2 ? i : rz() < .5 ? 1 : 0) : (o.polarita | 0);   // první dvě zadání vždy obě varianty
     }
     const predem = [];
     if (level.osazeno) {

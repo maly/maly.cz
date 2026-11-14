@@ -368,5 +368,25 @@
       cile: { bloky: 14, kroky: 14 },
       testy: { viditelne: 1, skryte: 0 },
     },
+    {
+      id: '5.2',
+      kapitola: 5,
+      kapitolaNazev: 'Páječka',
+      nazev: 'Polarita',
+      zadani: 'Značka + u patice ukazuje, kam patří delší nožička LED. V každém zadání je jinde. Podle značky LED otoč, nebo neotáčej.',
+      napoveda: 'Plochá strana LED je minus. Podmínka „značka je obráceně“ platí, když stojíš na patici se značkou vpravo.',
+      mapa: [
+        '......',
+        '.POO..',
+        '......',
+      ],
+      start: { smer: 'vychod' },
+      privod: { strana: 'sever', poradi: ['led', 'odpor'] },
+      obvod: [{ x: 2, y: 1, druh: 'led', polarita: 'nahodna' }, { x: 3, y: 1, druh: 'odpor' }],
+      bloky: ['krok', 'vlevo', 'vpravo', 'skoc', 'zvedni', 'poloz', 'opakuj', 'stale', 'kdyz', 'uloz', 'vyndej', 'prohod', 'pajej', 'vypajej', 'otoc'],
+      podminky: ['drzim', 'druh:led', 'druh:odpor', 'druh:spaleny', 'znacka:obracena', 'patice:volna', 'patice:osazena', 'kapsa:neco', 'cesta:vpred', 'cesta:vlevo', 'cesta:vpravo'],
+      cile: { bloky: 16, kroky: 15 },
+      testy: { viditelne: 3, skryte: 2 },
+    },
   ];
 });

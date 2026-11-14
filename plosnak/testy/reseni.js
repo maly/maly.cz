@@ -223,4 +223,14 @@ module.exports = {
       { program: ['zvedni', 'krok', 'pajej', 'poloz'], zprava: /přívodu/ },
     ],
   },
+  '5.2': {
+    reference: ['zvedni', 'krok', ['kdyz', 'znacka:obracena', ['otoc'], []], 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo',
+      'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
+    chybna: [
+      { program: ['zvedni', 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo', 'zvedni', 'krok', 'krok', 'poloz', 'pajej'], zprava: /obráceně/ },
+      { program: ['zvedni', 'otoc', 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo', 'zvedni', 'krok', 'krok', 'poloz', 'pajej'], zprava: /obráceně/ },
+      { program: ['zvedni', ['kdyz', 'znacka:obracena', ['otoc'], []], 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo',
+        'zvedni', 'krok', 'krok', 'poloz', 'pajej'], zprava: /obráceně/ },
+    ],
+  },
 };
