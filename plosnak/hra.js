@@ -729,7 +729,15 @@
     document.querySelectorAll('#program .blok.aktivni').forEach(e => e.classList.remove('aktivni'));
     if (!ev || !ev.id) return;
     const e = document.querySelector(`#program .blok[data-id="${ev.id}"]`);
-    if (e) { e.classList.add('aktivni'); if (e.scrollIntoView && beh && beh.bezi) e.scrollIntoView({ block: 'nearest' }); }
+    if (!e) return;
+    e.classList.add('aktivni');
+    // Posouvá se jen vlastní posuvník programu (desktop), nikdy stránka: deska musí zůstat na očích.
+    const ol = $('#program');
+    if (ol.scrollHeight > ol.clientHeight + 1) {
+      const r = e.getBoundingClientRect(), o = ol.getBoundingClientRect();
+      if (r.top < o.top) ol.scrollTop -= o.top - r.top + 8;
+      else if (r.bottom > o.bottom) ol.scrollTop += r.bottom - o.bottom + 8;
+    }
   }
 
   function vykresliTesty() {

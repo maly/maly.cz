@@ -295,6 +295,29 @@ def mobil_dlouhy(p):
     page.wait_for_timeout(80)
     over(len(ops(page)) == n, 'podržení bez pohybu nic nesmaže')
     page.screenshot(path=f'{SNIMKY}/m-05-dlouhy.png', full_page=True)
+    # během běhu se stránka nesmí sama posouvat k zvýrazněnému bloku
+    page.evaluate('window.scrollTo(0, 0)')
+    tukni(cdp, page, '#rychlost [data-r="4"]')
+    tukni(cdp, page, '#spust')
+    pockej_konec(page, 15000)
+    sy = page.evaluate('window.scrollY')
+    over(sy == 0, f'mobil: běh programu neposouvá stránku (scrollY {sy})')
+    ctx.close(); b.close()
+
+    print('Chromium desktop 1280x700: dlouhý program se posouvá uvnitř')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 700})
+    page.evaluate("""localStorage.setItem('malycz.plosnak.v1', JSON.stringify({aktualni: '1.3', levely: {
+      '1.1': {splneno: true}, '1.2': {splneno: true}}}))""")
+    page.reload(); page.wait_for_function('window.Plosnak')
+    for op in RESENI['1.3']:
+        page.click(f'#paleta .blok[data-op="{op}"]')
+    page.evaluate('window.scrollTo(0, 0); document.getElementById("program").scrollTop = 0')
+    page.click('#rychlost [data-r="4"]')
+    page.click('#spust')
+    pockej_konec(page, 15000)
+    over(page.evaluate('window.scrollY') == 0, 'desktop: stránka zůstala nahoře')
+    over(page.evaluate('document.getElementById("program").scrollTop') > 0, 'desktop: program se posunul uvnitř')
     ctx.close(); b.close()
 
 
