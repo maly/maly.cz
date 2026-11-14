@@ -437,5 +437,26 @@
       cile: { bloky: 16, kroky: 43 },
       testy: { viditelne: 3, skryte: 2 },
     },
+    // ---------- kapitola 6: Dva panáčci (spolupráce) ----------
+    {
+      id: '6.1',
+      kapitola: 6,
+      kapitolaNazev: 'Dva panáčci',
+      nazev: 'Předávka',
+      zadani: 'První panáček nosí propojky z přívodu na odkládací místo uprostřed, druhý odtamtud na výstup. Na odkládací místo se vejde jen jeden kus.',
+      napoveda: 'Každý panáček má vlastní program, přepínáš je záložkami. Hvízdnutí druhého probudí z čekání.',
+      mapa: [
+        '.......',
+        '.P#H#V.',
+        '.......',
+      ],
+      panacci: [{ x: 1, y: 1, smer: 'vychod' }, { x: 5, y: 1, smer: 'zapad' }],
+      privod: { strana: 'sever', druh: 'propojka', pocet: [3, 6] },
+      vystup: { strana: 'sever' },
+      bloky: ['krok', 'vlevo', 'vpravo', 'skoc', 'zvedni', 'poloz', 'opakuj', 'stale', 'kdyz', 'uloz', 'vyndej', 'prohod', 'pajej', 'vypajej', 'otoc', 'hvizdni', 'cekej'],
+      podminky: ['drzim', 'druh:propojka', 'druh:odpor', 'druh:led', 'druh:spaleny', 'patice:volna', 'patice:osazena', 'kapsa:neco', 'cesta:vpred', 'cesta:vlevo', 'cesta:vpravo'],
+      cile: { bloky: 26, kroky: 74 },
+      testy: { viditelne: 3, skryte: 2 },
+    },
   ];
 });

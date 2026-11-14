@@ -283,4 +283,15 @@ module.exports = {
         'vyndej', 'poloz'], duvod: 'pad' },
     ],
   },
+  '6.1': {
+    // Dva programy: [první panáček, druhý panáček]. Hvízdá se, až když ten, kdo hvízdá, uvolnil odkládací místo.
+    reference: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]],
+    chybna: [
+      { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]], zprava: /válí|přívodu/ },
+      { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'hvizdni', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]], zprava: /./ },
+      { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]], duvod: 'pad' },
+      // druhý nehvízdne, první čeká navždy
+      { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo']]]], zprava: /přívodu/ },
+    ],
+  },
 };

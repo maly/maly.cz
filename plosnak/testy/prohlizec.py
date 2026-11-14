@@ -559,8 +559,14 @@ def kapitola(p, nazev, reseni, splnene, kontrola=None):
     page.reload(); page.wait_for_function('window.Plosnak')
     for i, (lid, prg) in enumerate(reseni.items()):
         over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
-        sestav(page, prg, page.click)
-        over(page.evaluate('Plosnak.program') == normal(prg), f'{lid}: program složený přes rozhraní')
+        if isinstance(prg, tuple):                       # víc panáčků: program pro každého na své záložce
+            for j, pr in enumerate(prg):
+                page.click(f'#zalozky [data-ag="{j}"]')
+                sestav(page, pr, page.click)
+            over(page.evaluate('Plosnak.programy') == [normal(pr) for pr in prg], f'{lid}: programy obou panáčků')
+        else:
+            sestav(page, prg, page.click)
+            over(page.evaluate('Plosnak.program') == normal(prg), f'{lid}: program složený přes rozhraní')
         if kontrola:
             kontrola(page, lid)
         page.click('#rychlost [data-r="4"]')
@@ -644,7 +650,24 @@ def kontrola5(page, lid):
     page.screenshot(path=f'{SNIMKY}/k-{lid}-program.png')
 
 
+KAP1_5 = KAP1_4 + ['5.1', '5.2', '5.3', '5.4']
+RESENI6 = {
+    '6.1': ([['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]],
+            [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]),
+}
+
+
+def kontrola6(page, lid):
+    page.click('#rychlost [data-r="1"]')
+    for _ in range(9):
+        page.click('#krok'); page.wait_for_timeout(430)
+    page.screenshot(path=f'{SNIMKY}/k-{lid}-krokovani.png')
+    over(page.locator('#zalozky button').count() == 2, f'{lid}: záložky dvou programů')
+    page.click('#zastav')
+
+
 with sync_playwright() as p:
+    kapitola(p, 'kapitola 6', RESENI6, KAP1_5, kontrola6)
     kapitola(p, 'kapitola 5', RESENI5, KAP1_4, kontrola5)
     kapitola(p, 'kapitola 4', RESENI4, KAP1_3, kontrola4)
     kapitola_mobil(p, '4.4', RESENI4['4.4'], KAP1_3 + ['4.1', '4.2', '4.3'])

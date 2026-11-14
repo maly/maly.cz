@@ -42,6 +42,8 @@
     pajej:  { nazev: 'pájej', druh: 'pajka' },
     vypajej: { nazev: 'vypájej', druh: 'pajka' },
     otoc:   { nazev: 'otoč součástku', druh: 'pajka' },
+    hvizdni: { nazev: 'hvízdni', druh: 'signal' },
+    cekej:  { nazev: 'čekej na hvízdnutí', druh: 'signal' },
   };
 
   // Podmínky bloku když; stejné klíče slouží i jako pravidla výstupů (prijima).
@@ -120,7 +122,8 @@
       obvodMapa: Object.fromEntries((def.obvod || []).map((o, i) => [o.x + ',' + o.y, Object.assign({ poradi: i }, o)])),
       privodPos: strana(privod, (def.privod || {}).strana),
       vystupPos: vystupy[0] || null,
-      startPos: {
+      startPoz: def.panacci ? def.panacci.map(p => ({ x: p.x, y: p.y, smer: SMER[p.smer || 'vychod'] })) : null,
+      startPos: def.panacci ? { x: def.panacci[0].x, y: def.panacci[0].y, smer: SMER[def.panacci[0].smer || 'vychod'] } : {
         x: start.x != null ? start.x : privod.x,
         y: start.y != null ? start.y : privod.y,
         smer: SMER[start.smer || 'vychod'],
@@ -135,7 +138,7 @@
     return level.bunky[y][x];
   }
   const JE_VYSTUP = 'VABCK';
-  const jeCesta = c => c === '#' || c === 'P' || c === 'R' || c === 'O' || (!!c && JE_VYSTUP.includes(c));
+  const jeCesta = c => c === '#' || c === 'P' || c === 'R' || c === 'O' || c === 'H' || (!!c && JE_VYSTUP.includes(c));
   const vystupNa = (level, x, y) => level.vystupy.find(v => v.x === x && v.y === y) || null;
 
   // Dokonalé bludiště: buňky na sudých souřadnicích, chodby mezi nimi. Start vlevo nahoře, výstup vpravo dole.
@@ -275,6 +278,8 @@
       rozsypano: [],
       takt: 0,
       konec: null,
+      ag: level.startPoz ? level.startPoz.map(p => ({ x: p.x, y: p.y, smer: p.smer, drzi: null, kapsa: null, hotovo: false, ceka: null })) : null,
+      signaly: level.startPoz ? level.startPoz.map(() => 0) : null,
     };
   }
 
@@ -284,6 +289,8 @@
       privod: s.privod.slice(), vystup: s.vystup.slice(), celkem: s.celkem,
       podlaha: Object.assign({}, s.podlaha), rozsypano: s.rozsypano.slice(),
       cin: Object.assign({}, s.cin), znacky: s.znacky, skupin: s.skupin,
+      ag: s.ag ? s.ag.map(a => ({ x: a.x, y: a.y, smer: a.smer, drzi: a.drzi, kapsa: a.kapsa, hotovo: a.hotovo, ceka: !!a.ceka })) : null,
+      signaly: s.signaly ? s.signaly.slice() : null,
     };
   }
 
@@ -331,22 +338,15 @@
 
   const klic = (x, y) => x + ',' + y;
 
-  // Jeden takt: vykoná další akční blok a vrátí událost pro vykreslení.
-  function takt(level, s, m) {
-    if (s.konec) return null;
-    const u = dalsiAkce(m, level, s);
-    if (!u) { s.konec = vyhodnot(level, s, 'konec'); return { typ: 'konec', konec: s.konec }; }
-    if (u.op === '_prazdnaSmycka') { s.konec = { duvod: 'usnul', uspech: false }; return { typ: 'usnul', konec: s.konec }; }
+  const obsazeno = (s, x, y) => !!s._jini && s._jini.some(a => a.x === x && a.y === y);
 
-    const z = { x: s.x, y: s.y, smer: s.smer };
-    const ev = { id: u.id, op: u.op, z, smycky: aktivniUzly(m) };
+  // Akční blok na stavu s (pro víc panáčků je v s nahraný ten, kdo je na řadě).
+  function vykonej(level, s, u, ev) {
     const [dx, dy] = SMERY[s.smer];
-    s.takt++;
-
     switch (u.op) {
       case 'krok': {
         const nx = s.x + dx, ny = s.y + dy, c = bunka(level, nx, ny);
-        if (c === 'X') { ev.typ = 'naraz'; break; }
+        if (c === 'X' || obsazeno(s, nx, ny)) { ev.typ = 'naraz'; break; }
         s.x = nx; s.y = ny;
         if (!jeCesta(c)) { ev.typ = 'pad'; s.konec = { duvod: 'pad', uspech: false }; break; }
         ev.typ = 'krok';
@@ -355,7 +355,7 @@
       }
       case 'skoc': {
         const nx = s.x + 2 * dx, ny = s.y + 2 * dy, c = bunka(level, nx, ny);
-        if (c === 'X') { ev.typ = 'naraz'; break; }
+        if (c === 'X' || obsazeno(s, nx, ny)) { ev.typ = 'naraz'; break; }
         s.x = nx; s.y = ny;
         if (!jeCesta(c)) { ev.typ = 'pad'; ev.skok = true; s.konec = { duvod: 'pad', uspech: false }; break; }
         ev.typ = 'skok';
@@ -368,23 +368,13 @@
         const p = level.privodPos, k = klic(s.x, s.y);
         if (s.drzi) { ev.typ = 'plnaRuka'; break; }
         if (p && s.x === p.x && s.y === p.y) {
-          if (!s.privod.length) {
-            s.takt--;
-            ev.typ = 'konecSmeny';
-            s.konec = vyhodnot(level, s, 'konecSmeny');
-            break;
-          }
+          if (!s.privod.length) { ev.typ = 'konecSmeny'; ev.konecSmeny = true; break; }
           s.drzi = s.privod.shift(); ev.typ = 'zvedni'; ev.odkud = 'privod'; ev.polozka = s.drzi;
           break;
         }
         if (s.podlaha[k] && s.cin[k]) { ev.typ = 'pripajeno'; break; }
         if (s.podlaha[k]) { s.drzi = s.podlaha[k]; delete s.podlaha[k]; ev.typ = 'zvedni'; ev.odkud = 'podlaha'; ev.polozka = s.drzi; break; }
-        if (bunka(level, s.x, s.y) === 'R') {          // prázdná páska: konec směny
-          s.takt--;
-          ev.typ = 'konecSmeny';
-          s.konec = vyhodnot(level, s, 'konecSmeny');
-          break;
-        }
+        if (bunka(level, s.x, s.y) === 'R') { ev.typ = 'konecSmeny'; ev.konecSmeny = true; break; }   // prázdná páska
         ev.typ = 'hmat';
         break;
       }
@@ -441,6 +431,61 @@
       }
       default: ev.typ = 'nic';
     }
+  }
+
+  // Jeden takt pro víc panáčků: každý vykoná jeden blok, nejdřív první, pak druhý.
+  // Hvízdnutí přidá druhému signál, čekej jeden spotřebuje, jinak stojí.
+  // Směna skončí, když se už nikdo nemůže pohnout (všichni skončili nebo marně čekají).
+  const POLE = ['x', 'y', 'smer', 'drzi', 'kapsa'];
+  function taktVice(level, s, stroje) {
+    if (s.konec) return null;
+    const udalosti = [];
+    let pohyb = false;
+    for (let i = 0; i < s.ag.length && !s.konec; i++) {
+      const a = s.ag[i];
+      if (a.hotovo) continue;
+      for (const k of POLE) s[k] = a[k];
+      s._jini = s.ag.filter((_, j) => j !== i);
+      const u = a.ceka || dalsiAkce(stroje[i], level, s);
+      if (!u) { a.hotovo = true; continue; }
+      if (u.op === '_prazdnaSmycka') { s.konec = { duvod: 'usnul', uspech: false, panacek: i }; break; }
+      const ev = { id: u.id, op: u.op, z: { x: s.x, y: s.y, smer: s.smer }, smycky: aktivniUzly(stroje[i]), panacek: i };
+      if (u.op === 'cekej') {
+        if (s.signaly[i] > 0) { s.signaly[i]--; a.ceka = null; ev.typ = 'dockal'; pohyb = true; }
+        else { a.ceka = u; ev.typ = 'ceka'; }
+      } else if (u.op === 'hvizdni') {
+        s.signaly[1 - i]++; ev.typ = 'hvizd'; pohyb = true;
+      } else {
+        vykonej(level, s, u, ev);
+        if (ev.konecSmeny) a.hotovo = true; else pohyb = true;
+        if (s.konec) s.konec.panacek = i;
+      }
+      for (const k of POLE) a[k] = s[k];
+      ev.na = { x: s.x, y: s.y, smer: s.smer };
+      udalosti.push(ev);
+    }
+    s._jini = null;
+    if (!s.konec) {
+      if (!pohyb) s.konec = vyhodnot(level, s, 'konec');
+      else if (++s.takt >= MAX_TAKTU) s.konec = { duvod: 'usnul', uspech: false };
+    }
+    return { typ: 'vice', udalosti, konec: s.konec };
+  }
+
+  // Jeden takt: vykoná další akční blok a vrátí událost pro vykreslení.
+  function takt(level, s, m) {
+    if (level.startPoz) return taktVice(level, s, m);
+    if (s.konec) return null;
+    const u = dalsiAkce(m, level, s);
+    if (!u) { s.konec = vyhodnot(level, s, 'konec'); return { typ: 'konec', konec: s.konec }; }
+    if (u.op === '_prazdnaSmycka') { s.konec = { duvod: 'usnul', uspech: false }; return { typ: 'usnul', konec: s.konec }; }
+
+    const z = { x: s.x, y: s.y, smer: s.smer };
+    const ev = { id: u.id, op: u.op, z, smycky: aktivniUzly(m) };
+    s.takt++;
+
+    vykonej(level, s, u, ev);
+    if (ev.konecSmeny) { s.takt--; s.konec = vyhodnot(level, s, 'konecSmeny'); }
     if (!s.konec && s.takt >= MAX_TAKTU) { s.konec = { duvod: 'usnul', uspech: false }; ev.usnul = true; }
     if (s.konec) ev.konec = s.konec;
     ev.na = { x: s.x, y: s.y, smer: s.smer };
@@ -456,6 +501,10 @@
   // Vyhodnocení na konci směny. Vrací { duvod, uspech, zprava }.
   function vyhodnot(level, s, duvod) {
     const chyby = [];
+    if (s.ag) {                                         // víc panáčků: co drží a mají v kapsách
+      const d = s.ag.find(a => a.drzi), k = s.ag.find(a => a.kapsa);
+      s.drzi = d ? d.drzi : null; s.kapsa = k ? k.kapsa : null;
+    }
     if (level.kontrola === 'dojdi') return { duvod, uspech: false, zprava: 'Nedošel k výstupu.' };
     if (s.rozsypano.length) chyby.push('Rozsypal součástky.');
     if (s.drzi) chyby.push('Směna skončila a panáček pořád drží ' + (s.drzi.druh === 'led' ? 'LED' : nazevDruhu(s.drzi.druh, 1).replace(/a$/, 'u')) + '.');
@@ -555,7 +604,7 @@
 
   function spustTest(level, program, i) {
     level = instance(level, i);
-    const s = novyStav(level, zadani(level, i)), m = stroj(program);
+    const s = novyStav(level, zadani(level, i)), m = level.startPoz ? program.map(stroj) : stroj(program);
     while (!s.konec) takt(level, s, m);
     return {
       test: i, uspech: s.konec.uspech, duvod: s.konec.duvod, takty: s.takt,
@@ -575,7 +624,8 @@
     for (let i = 0; i < level.pocetTestu + level.pocetSkrytych; i++) vysledky.push(spustTest(level, program, i));
     const vsechny = vysledky.every(v => v.uspech);
     const kroky = vysledky.reduce((a, v) => a + v.takty, 0) / vysledky.length;
-    return { vsechny, vysledky, bloky: pocetBloku(program), kroky: Math.round(kroky * 10) / 10 };
+    const bloky = level.startPoz ? program.reduce((a, p) => a + pocetBloku(p), 0) : pocetBloku(program);
+    return { vsechny, vysledky, bloky, kroky: Math.round(kroky * 10) / 10 };
   }
 
   return {

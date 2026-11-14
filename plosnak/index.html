@@ -11,7 +11,7 @@
     :root {
       --bg: #f7f8fa; --paper: #fff; --text: #101317; --muted: #5f6872; --soft: #d8dde3;
       --hard: #101317; --accent: #006c86; --y: #f2b705; --red: #d9483b;
-      --pohyb: #d3ebf1; --ruce: #fde4a0; --rizeni: #e6dcf6; --rozhod: #fbd6c4; --kapsa: #ecd9bd; --pajka: #d5dde2;
+      --pohyb: #d3ebf1; --ruce: #fde4a0; --rizeni: #e6dcf6; --rozhod: #fbd6c4; --kapsa: #ecd9bd; --pajka: #d5dde2; --signal: #d7f0c9;
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
     * { box-sizing: border-box; }
@@ -108,6 +108,12 @@
       display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--hard);
       font: 800 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
     }
+    .zalozky { display: flex; border-bottom: 1px solid var(--hard); }
+    .zalozky[hidden] { display: none; }
+    .zal { flex: 1; min-height: 36px; border: 0; border-right: 1px solid var(--hard); background: var(--bg); font: 800 12px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .zal:last-child { border-right: 0; }
+    .zal[aria-pressed="true"] { background: var(--paper); box-shadow: inset 0 -3px 0 var(--hard); }
+    .zal i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--hard); display: inline-block; }
     #pocet { margin-left: auto; color: var(--muted); letter-spacing: .02em; text-transform: none; }
     #pocet.pres { color: var(--red); }
     #vymaz { min-height: 26px; padding: 0 7px; font-size: 10px; box-shadow: none; }
@@ -131,6 +137,7 @@
     .b-rozhod { background: var(--rozhod); }
     .b-kapsa { background: var(--kapsa); }
     .b-pajka { background: var(--pajka); }
+    .b-signal { background: var(--signal); }
     .legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 10px; font: 700 12px/1 var(--mono); }
     .legenda[hidden] { display: none; }
     .lg-titul { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; }
@@ -254,6 +261,7 @@
 
     <section class="panel" id="panel-program" aria-label="Program">
       <div class="panel-hlava">Program <span id="pocet"></span> <button type="button" class="tl" id="vymaz">Smazat</button></div>
+      <div class="zalozky" id="zalozky" role="group" aria-label="Čí program" hidden></div>
       <ol id="program"></ol>
     </section>
 

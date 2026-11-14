@@ -19,29 +19,30 @@ function prg(zapis) {
 for (const def of LEVELY) {
   const level = S.pripravLevel(def);
   const r = RESENI[def.id];
+  const prgL = def.panacci ? (x => x.map(prg)) : prg;     // víc panáčků: pole programů
   test(`level ${def.id}: má referenční řešení a chybná řešení`, () => {
     assert.ok(r, 'chybí záznam v reseni.js');
     assert.ok(r.chybna.length >= 3, 'aspoň tři chybná řešení');
   });
   test(`level ${def.id}: referenční řešení projde`, () => {
-    const v = S.vyhodnotReseni(level, prg(r.reference));
+    const v = S.vyhodnotReseni(level, prgL(r.reference));
     assert.ok(v.vsechny, JSON.stringify(v.vysledky));
   });
   test(`level ${def.id}: cíle jsou splnitelné (referenčním nebo alternativním řešením)`, () => {
-    const vse = [r.reference, ...(r.alternativy || [])].map(p => S.vyhodnotReseni(level, prg(p)));
+    const vse = [r.reference, ...(r.alternativy || [])].map(p => S.vyhodnotReseni(level, prgL(p)));
     const b = Math.min(...vse.map(v => v.bloky)), k = Math.min(...vse.map(v => v.kroky));
     assert.ok(b <= def.cile.bloky, `bloky ${b} > ${def.cile.bloky}`);
     assert.ok(k <= def.cile.kroky, `kroky ${k} > ${def.cile.kroky}`);
   });
   for (const [i, alt] of (r.alternativy || []).entries()) {
     test(`level ${def.id}: alternativní řešení ${i + 1} projde`, () => {
-      const v = S.vyhodnotReseni(level, prg(alt));
+      const v = S.vyhodnotReseni(level, prgL(alt));
       assert.ok(v.vsechny, JSON.stringify(v.vysledky));
     });
   }
   for (const [i, ch] of r.chybna.entries()) {
     test(`level ${def.id}: chybné řešení ${i + 1} neprojde (${ch.duvod})`, () => {
-      const v = S.vyhodnotReseni(level, prg(ch.program));
+      const v = S.vyhodnotReseni(level, prgL(ch.program));
       assert.ok(!v.vsechny);
       const spatne = v.vysledky.find(x => !x.uspech);
       if (ch.duvod) assert.strictEqual(spatne.duvod, ch.duvod);
@@ -138,4 +139,19 @@ test('podmínky čtou desku vzhledem k natočení panáčka', () => {
   assert.strictEqual(S.plati(l, s, 'cesta:vpravo'), false);
   s.smer = 2;
   assert.strictEqual(S.plati(l, s, 'cesta:vpravo'), true);
+});
+
+test('dva panáčci: čekání bez hvízdnutí skončí vyhodnocením, ne nekonečnou smyčkou', () => {
+  const l = S.pripravLevel({ id: 't2', mapa: ['P#V'], panacci: [{ x: 0, y: 0 }, { x: 2, y: 0, smer: 'zapad' }], privod: { pocet: [1, 1] } });
+  const v = S.spustTest(l, [prg([['stale', ['cekej']]]), prg([['stale', ['cekej']]])], 0);
+  assert.strictEqual(v.duvod, 'konec');
+  assert.ok(v.takty < 5);
+});
+
+test('dva panáčci: krok na políčko druhého je náraz', () => {
+  const l = S.pripravLevel({ id: 't3', mapa: ['P##V'], panacci: [{ x: 0, y: 0 }, { x: 1, y: 0, smer: 'zapad' }], privod: { pocet: [1, 1] } });
+  const s = S.novyStav(l, S.zadani(l, 0)), m = [S.stroj(prg(['krok'])), S.stroj(prg([]))];
+  const ev = S.takt(l, s, m);
+  assert.strictEqual(ev.udalosti[0].typ, 'naraz');
+  assert.strictEqual(s.ag[0].x, 0);
 });
