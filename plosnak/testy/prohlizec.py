@@ -519,10 +519,21 @@ def kapitola3(p):
     # chybné třídění: hláška o výstupu
     page.click('#levely [data-level="3.1"]')
     page.click('#vymaz')
-    sestav(page, [['stale', ['zvedni', 'vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo']]], page.click)
+    sestav(page, [['stale', [['kdyz', 'drzim', [], []], 'zvedni', 'vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo']]], page.click)
     page.click('#spust')
     pockej_konec(page, 15000)
     over('Na výstup A patří jen odpory' in page.inner_text('#stav'), 'chybné třídění: hláška')
+    # rozbalený výběr podmínky musí být nad následujícími bloky, i po běhu, kdy jsou bloky průhledné
+    for pokus in ('po běhu', 'bez běhu'):
+        if pokus == 'bez běhu':
+            page.click('#zastav')
+        page.click('#program .vetveni > .hlava .podminka-n')
+        bb = page.locator('#program .volba-p button').last.bounding_box()
+        nahore = page.evaluate('([x, y]) => !!document.elementFromPoint(x, y).closest(".volba-p")', [bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2])
+        over(nahore, f'výběr podmínky je nad dalšími bloky ({pokus})')
+        if pokus == 'po běhu':
+            page.screenshot(path=f'{SNIMKY}/k3-volba-po-behu.png')
+        page.click('#stav')
     page.screenshot(path=f'{SNIMKY}/k3-3.1-chyba.png')
     ctx.close(); b.close()
 

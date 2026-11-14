@@ -1086,7 +1086,8 @@
           `<button type="button" data-p="${k}" aria-pressed="${k === u.podminka}">${S.PODMINKY[k]}</button>`).join('')}</div>` : '';
       const vyb = d => kurzor && kurzor.id === u.id && kurzor.dovnitr === d ? ' vybrany' : '';
       if (kdyz) li.classList.add('vetveni');
-      const hlava = el('div', 'blok hlava b-' + b.druh + vyb('telo'),
+      const otevrena = volbaN === u.id || volbaP === u.id ? ' s-volbou' : '';   // rozbalený výběr musí být nad dalšími bloky
+      const hlava = el('div', 'blok hlava b-' + b.druh + vyb('telo') + otevrena,
         `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${kdyz ? 'když' : u.op === 'stale' ? 'opakuj stále' : u.op === 'opakujKdyz' ? 'opakuj, když' : 'opakuj'}</span>${n}${pod}<span class="kolo"></span>${smaz}${volba}${volbaPod}`);
       hlava.dataset.id = u.id; hlava.tabIndex = 0;
       const telo = el('ol', 'telo');
