@@ -196,8 +196,112 @@ def webkit(p):
     ctx.close(); b.close()
 
 
+RESENI = {
+    '1.1': REFERENCE,
+    '1.2': ['zvedni', 'krok', 'krok', 'vpravo', 'krok', 'krok', 'poloz'],
+    '1.3': (['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo'] * 3)[:24],
+    '1.4': ['zvedni', 'skoc', 'skoc', 'skoc', 'poloz'],
+}
+
+
+def levely(p):
+    print('Chromium desktop: postup levely 1.1 až 1.4')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 800})
+    over(page.locator('#levely button:disabled').count() == 3, 'zamčené 1.2 až 1.4')
+    for i, (lid, prg) in enumerate(RESENI.items()):
+        over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
+        page.screenshot(path=f'{SNIMKY}/l-{lid}-start.png')
+        for op in prg:
+            page.click(f'#paleta .blok[data-op="{op}"]')
+        if lid == '1.4':
+            page.click('#rychlost [data-r="1"]')
+            page.click('#spust')
+            page.wait_for_timeout(560)
+            page.screenshot(path=f'{SNIMKY}/l-1.4-skok.png')
+        else:
+            page.click('#rychlost [data-r="0"]')
+            page.click('#spust')
+        pockej_konec(page)
+        over(page.evaluate('Plosnak.beh.konec.uspech'), f'{lid}: referenční řešení uspěje')
+        page.wait_for_selector('#vysledek:not([hidden])', timeout=3000)
+        page.screenshot(path=f'{SNIMKY}/l-{lid}-splneno.png')
+        if i < 3:
+            page.click('[data-akce="dalsi"]')
+    over(page.locator('#levely .hotovo').count() == 4, 'všechny levely označené jako splněné')
+    # 1.4: skok o krok dřív = pád
+    page.click('[data-akce="zpet"]')
+    page.click('#vymaz')
+    for op in ['zvedni', 'krok', 'skoc']:
+        page.click(f'#paleta .blok[data-op="{op}"]')
+    page.click('#rychlost [data-r="1"]')
+    page.click('#spust')
+    pockej_konec(page)
+    page.wait_for_timeout(500)
+    over(page.evaluate('Plosnak.vis.poza') == 'visi', '1.4: předčasný skok skončí pádem')
+    page.screenshot(path=f'{SNIMKY}/l-1.4-pad.png')
+    # přepnutí zpět na 1.2 přes výběr levelů
+    page.click('#levely [data-level="1.2"]')
+    over(page.evaluate('Plosnak.level') == '1.2' and ops(page) == RESENI['1.2'], 'výběr levelu vrátí uložený program')
+    page.reload(); page.wait_for_function('window.Plosnak')
+    over(page.evaluate('Plosnak.level') == '1.2', 'aktuální level přežije znovunačtení')
+    ctx.close(); b.close()
+
+
+def mobil_dlouhy(p):
+    print('Chromium mobil 390: dlouhý program v 1.3')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 390, 'height': 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page.evaluate("""localStorage.setItem('malycz.plosnak.v1', JSON.stringify({aktualni: '1.3', levely: {
+      '1.1': {splneno: true}, '1.2': {splneno: true}}}))""")
+    page.reload(); page.wait_for_function('window.Plosnak')
+    over(page.evaluate('Plosnak.level') == '1.3', 'mobil: otevřen 1.3')
+    cdp = ctx.new_cdp_session(page)
+    for op in RESENI['1.3']:
+        tukni(cdp, page, f'#paleta .blok[data-op="{op}"]')
+    over(ops(page) == RESENI['1.3'], 'mobil: 24 bloků naťukáno')
+    # švih po řádcích programu posune stránku
+    page.evaluate('window.scrollTo(0, 0)')
+    r = page.locator('#program .blok').nth(2).bounding_box()
+    x, y = r['x'] + r['width'] / 2, r['y'] + 10
+    dotyk(cdp, 'touchStart', x, y)
+    for i in range(1, 9):
+        dotyk(cdp, 'touchMove', x, y - i * 40)
+        page.wait_for_timeout(16)
+    dotyk(cdp, 'touchEnd', 0, 0)
+    page.wait_for_timeout(400)
+    sy = page.evaluate('window.scrollY')
+    over(sy > 100, f'švih po programu posune stránku (scrollY {sy})')
+    over(ops(page) == RESENI['1.3'], 'švih program nezmění')
+    # podržení a tah: první řádek (zvedni) za třetí
+    r1 = page.locator('#program .blok').nth(0).bounding_box()
+    r4 = page.locator('#program .blok').nth(3).bounding_box()
+    x, y = r1['x'] + r1['width'] / 2, r1['y'] + 20
+    dotyk(cdp, 'touchStart', x, y)
+    page.wait_for_timeout(450)
+    for i in range(1, 11):
+        dotyk(cdp, 'touchMove', x, y + (r4['y'] + 4 - y) * i / 10)
+        page.wait_for_timeout(16)
+    page.screenshot(path=f'{SNIMKY}/m-04-podrzeni.png')
+    dotyk(cdp, 'touchEnd', 0, 0)
+    page.wait_for_timeout(80)
+    over(ops(page)[:4] == ['krok', 'krok', 'zvedni', 'poloz'], f'podržení a tah přesune řádek ({ops(page)[:4]})')
+    # podržení bez pohybu nic nesmaže
+    n = len(ops(page))
+    r1 = page.locator('#program .blok').nth(1).bounding_box()
+    dotyk(cdp, 'touchStart', r1['x'] + 60, r1['y'] + 20)
+    page.wait_for_timeout(450)
+    dotyk(cdp, 'touchEnd', 0, 0)
+    page.wait_for_timeout(80)
+    over(len(ops(page)) == n, 'podržení bez pohybu nic nesmaže')
+    page.screenshot(path=f'{SNIMKY}/m-05-dlouhy.png', full_page=True)
+    ctx.close(); b.close()
+
+
 with sync_playwright() as p:
     desktop(p)
+    levely(p)
+    mobil_dlouhy(p)
     mobil(p)
     webkit(p)
 srv.shutdown()

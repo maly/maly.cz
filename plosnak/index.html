@@ -62,6 +62,11 @@
       .panel-paleta { position: sticky; top: 16px; }
     }
 
+    .levely { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+    .levely .tl { min-height: 30px; min-width: 42px; padding: 0 8px; font-size: 11px; box-shadow: none; }
+    .levely .tl.hotovo { background: #d6eadf; }
+    .levely .tl.hotovo::after { content: " ✓"; }
+    .levely .tl[aria-current] { background: var(--hard); color: #fff; }
     .stitek { font: 800 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
     .zadani h1 { margin: 6px 0 4px; font-size: clamp(22px, 4vw, 30px); line-height: 1.1; letter-spacing: -.03em; }
     .zadani p { margin: 0; }
@@ -105,6 +110,7 @@
     #vymaz { min-height: 26px; padding: 0 7px; font-size: 10px; box-shadow: none; }
 
     ol#program { list-style: none; margin: 0; padding: 8px; display: grid; gap: 5px; min-height: 120px; }
+    @media (min-width: 960px) { ol#program { max-height: calc(100vh - 150px); overflow-y: auto; } }
     #paleta { padding: 8px; display: grid; gap: 6px; }
     .prazdny { padding: 18px 8px; text-align: center; color: var(--muted); font-size: 13px; border: 1px dashed var(--soft); }
     .prazdny[hidden] { display: none; }
@@ -116,6 +122,7 @@
       cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
       touch-action: none; -webkit-tap-highlight-color: transparent;
     }
+    #program .blok { touch-action: pan-y; }
     .b-ruce { background: var(--ruce); }
     .b-rizeni { background: var(--rizeni); }
     .blok .ikona { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -178,6 +185,7 @@
 
   <main class="hra" id="hra">
     <section class="zadani" aria-labelledby="lv-nazev">
+      <nav class="levely" id="levely" aria-label="Levely"></nav>
       <div class="stitek" id="lv-stitek"></div>
       <h1 id="lv-nazev"></h1>
       <p id="lv-text"></p>

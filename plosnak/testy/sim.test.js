@@ -22,12 +22,22 @@ for (const def of LEVELY) {
     assert.ok(r, 'chybí záznam v reseni.js');
     assert.ok(r.chybna.length >= 3, 'aspoň tři chybná řešení');
   });
-  test(`level ${def.id}: referenční řešení projde a splní cíle`, () => {
+  test(`level ${def.id}: referenční řešení projde`, () => {
     const v = S.vyhodnotReseni(level, prg(r.reference));
     assert.ok(v.vsechny, JSON.stringify(v.vysledky));
-    assert.ok(v.bloky <= def.cile.bloky, `bloky ${v.bloky} > ${def.cile.bloky}`);
-    assert.ok(v.kroky <= def.cile.kroky, `kroky ${v.kroky} > ${def.cile.kroky}`);
   });
+  test(`level ${def.id}: cíle jsou splnitelné (referenčním nebo alternativním řešením)`, () => {
+    const vse = [r.reference, ...(r.alternativy || [])].map(p => S.vyhodnotReseni(level, prg(p)));
+    const b = Math.min(...vse.map(v => v.bloky)), k = Math.min(...vse.map(v => v.kroky));
+    assert.ok(b <= def.cile.bloky, `bloky ${b} > ${def.cile.bloky}`);
+    assert.ok(k <= def.cile.kroky, `kroky ${k} > ${def.cile.kroky}`);
+  });
+  for (const [i, alt] of (r.alternativy || []).entries()) {
+    test(`level ${def.id}: alternativní řešení ${i + 1} projde`, () => {
+      const v = S.vyhodnotReseni(level, prg(alt));
+      assert.ok(v.vsechny, JSON.stringify(v.vysledky));
+    });
+  }
   for (const [i, ch] of r.chybna.entries()) {
     test(`level ${def.id}: chybné řešení ${i + 1} neprojde (${ch.duvod})`, () => {
       const v = S.vyhodnotReseni(level, prg(ch.program));

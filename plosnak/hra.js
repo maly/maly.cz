@@ -9,6 +9,7 @@
   const KLIC = 'malycz.plosnak.v1';
   const RYCHLOST = { '1': 400, '4': 100, '0': 0 };
   const KROKOVANI = 400;
+  const PODRZENI = 300;
 
   const K = '#101317', TEAL = '#006c86', Y = '#f2b705', W = '#fff', RED = '#d9483b';
   const MASKA = '#2f6b47', MASKA_T = '#245738', MASKA_S = '#3f8159', POTISK = '#e3ece5';
@@ -647,14 +648,28 @@
         <p class="vy-reakce">„${reakce}“</p>
         <div class="vy-tl">
           <button type="button" class="tl" data-akce="zpet">Zpět k programu</button>
-          <button type="button" class="tl hlavni" disabled title="Level ${dalsiLevelId()} se teprve staví">Další level</button>
+          ${dalsiLevel()
+            ? `<button type="button" class="tl hlavni" data-akce="dalsi">Další level ${dalsiLevel().id}</button>`
+            : '<button type="button" class="tl hlavni" disabled>Další kapitola se staví</button>'}
         </div>
       </div>`;
     setTimeout(() => { if (beh && beh.hotovo && vis.poza === 'jasa') $('#vysledek').hidden = false; }, 900);
-    vykresliZadani();
+    vykresliZadani(); vykresliLevely();
   }
 
-  function dalsiLevelId() { const [k, l] = level.id.split('.').map(Number); return k + '.' + (l + 1); }
+  function vykresliLevely() {
+    const nav = $('#levely'); nav.innerHTML = '';
+    LEVELY.forEach((l, i) => {
+      const z = data.levely[l.id] || {}, b = el('button', 'tl lv' + (z.splneno ? ' hotovo' : ''), l.id);
+      b.type = 'button'; b.dataset.level = l.id; b.disabled = !odemceno(i);
+      b.title = l.nazev + (z.splneno ? ' (splněno)' : b.disabled ? ' (zamčeno)' : '');
+      if (l.id === level.id) b.setAttribute('aria-current', 'step');
+      nav.appendChild(b);
+    });
+  }
+
+  function dalsiLevel() { return LEVELY[LEVELY.findIndex(l => l.id === level.id) + 1] || null; }
+  function odemceno(i) { return i === 0 || !!(data.levely[LEVELY[i - 1].id] || {}).splneno; }
 
   // ---------- rozhraní ----------
 
@@ -795,6 +810,14 @@
       op: blok.dataset.op, id: blok.dataset.id, el: blok,
       x0: e.clientX, y0: e.clientY, pid: e.pointerId, aktivni: false,
     };
+    // Prstem v programu se táhne až po podržení, jinak by řádky blokovaly posun stránky.
+    if (e.pointerType !== 'mouse' && tah.zdroj === 'program') {
+      tah.ceka = setTimeout(() => {
+        if (!tah || tah.aktivni) return;
+        tah.ceka = null; zacniTah();
+        if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) { /* nic */ }
+      }, PODRZENI);
+    }
     try { blok.setPointerCapture(e.pointerId); } catch (err) { /* nic */ }
   }
 
@@ -808,6 +831,7 @@
     document.body.appendChild(d); tah.duch = d;
     if (tah.zdroj === 'program') tah.el.classList.add('tazeny');
     tah.znacka = el('li', 'vkladani');
+    d.style.transform = `translate(${r.left}px, ${r.top}px)`;
     document.body.classList.add('tahne');
   }
 
@@ -815,9 +839,12 @@
     if (!tah || e.pointerId !== tah.pid) return;
     if (!tah.aktivni) {
       if (Math.hypot(e.clientX - tah.x0, e.clientY - tah.y0) < 7) return;
+      if (tah.ceka) { clearTimeout(tah.ceka); tah = null; return; }   // posun stránky, ne tah
       zacniTah();
     }
     e.preventDefault();
+    if (e.clientY < 56) window.scrollBy(0, -10);
+    else if (e.clientY > window.innerHeight - 56) window.scrollBy(0, 10);
     tah.duch.style.transform = `translate(${e.clientX - tah.dx}px, ${e.clientY - tah.dy}px)`;
     const nad = nadProgramem(e.clientX, e.clientY);
     tah.duch.classList.toggle('pryc', !nad && tah.zdroj === 'program');
@@ -836,6 +863,7 @@
   function konecTahu(e, zrusit) {
     if (!tah || (e && e.pointerId !== tah.pid)) return;
     const t = tah; tah = null;
+    if (t.ceka) clearTimeout(t.ceka);
     document.body.classList.remove('tahne');
     if (!t.aktivni) {
       if (zrusit) return;
@@ -844,7 +872,7 @@
       return;
     }
     t.duch.remove(); t.znacka.remove(); t.el.classList.remove('tazeny');
-    if (zrusit) { vykresliProgram(); return; }
+    if (zrusit || t.index === undefined) { vykresliProgram(); return; }   // podržel a pustil bez pohybu
     if (t.index != null) {
       if (t.zdroj === 'paleta') vlozBlok(t.op, t.index);
       else {
@@ -863,6 +891,8 @@
     window.addEventListener('pointermove', onMove, { passive: false });
     window.addEventListener('pointerup', e => konecTahu(e, false));
     window.addEventListener('pointercancel', e => konecTahu(e, true));
+    // během tahu prstem nesmí stránka ujet
+    document.addEventListener('touchmove', e => { if (tah && tah.aktivni) e.preventDefault(); }, { passive: false });
     // klávesnice: Enter na bloku v paletě ho vloží
     $('#paleta').addEventListener('click', e => { const b = e.target.closest('.blok'); if (b && e.detail === 0) vlozBlok(b.dataset.op); });
     $('#program').addEventListener('click', e => { const s = e.target.closest('.smaz'); if (s) smazBlok(s.closest('.blok').dataset.id); });
@@ -886,7 +916,12 @@
       testIdx = +b.dataset.test; zastav(); vykresliTesty();
     });
     $('#vysledek').addEventListener('click', e => {
+      if (e.target.closest('[data-akce="dalsi"]')) { const d = dalsiLevel(); if (d) nactiLevel(d); return; }
       if (e.target.closest('[data-akce="zpet"]') || e.target === $('#vysledek')) $('#vysledek').hidden = true;
+    });
+    $('#levely').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      nactiLevel(LEVELY.find(l => l.id === b.dataset.level));
     });
     if (window.ResizeObserver) new ResizeObserver(() => rozmer()).observe(cv.parentElement);
     else window.addEventListener('resize', rozmer);
@@ -900,18 +935,22 @@
 
   function nactiLevel(def) {
     level = S.pripravLevel(def);
+    data.aktualni = level.id; uloz();
+    document.body.classList.remove('bezi');
+    $('#vysledek').hidden = true;
     const z = data.levely[level.id] || {};
     program = ocisti(z.program, level.bloky);
     vybrany = program.length ? program[program.length - 1].id : null;
     testIdx = 0; beh = null; neuspechu = 0;
     vis = vychoziVis();
     document.title = `Plošňák ${level.id}: ${level.nazev}`;
-    vykresliZadani(); vykresliPaletu(); vykresliProgram(); vykresliTesty();
+    vykresliZadani(); vykresliLevely(); vykresliPaletu(); vykresliProgram(); vykresliTesty();
     rozmer(); ovladani(); stavRadek();
   }
 
   navaz();
-  nactiLevel(LEVELY[0]);
+  const ulozeny = LEVELY.findIndex(l => l.id === data.aktualni);
+  nactiLevel(LEVELY[ulozeny > 0 && odemceno(ulozeny) ? ulozeny : 0]);
   requestAnimationFrame(smycka);
 
   // pro automatické testy
@@ -921,5 +960,6 @@
     get vis() { return { poza: vis.poza, ev: vis.ev && vis.ev.typ, bublina: vis.bublina && vis.bublina.text }; },
     get T() { return T; },
     get neuspechu() { return neuspechu; },
+    get level() { return level.id; },
   };
 })();
