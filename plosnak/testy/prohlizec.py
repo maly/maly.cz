@@ -338,6 +338,8 @@ def normal(prg):
             out.append({'op': u})
         elif u[0] == 'opakuj':
             out.append({'op': 'opakuj', 'n': u[1], 'telo': normal(u[2])})
+        elif u[0] == 'kdyz':
+            out.append({'op': 'kdyz', 'podminka': u[1], 'telo': normal(u[2]), 'jinak': normal(u[3])})
         else:
             out.append({'op': u[0], 'telo': normal(u[1])})
     return out
@@ -351,6 +353,14 @@ def sestav(page, prg, klik):
             continue
         klik(f'#paleta .blok[data-op="{u[0]}"]')
         sid = page.get_attribute('#program .hlava.vybrany', 'data-id')
+        if u[0] == 'kdyz':
+            klik(f'#program .hlava[data-id="{sid}"] .podminka-n')
+            klik(f'#program .hlava[data-id="{sid}"] .volba-p [data-p="{u[1]}"]')
+            sestav(page, u[2], klik)
+            klik(f'#program .jinak-hlava[data-id="{sid}"]')
+            sestav(page, u[3], klik)
+            klik(f'#program .pata[data-id="{sid}"]')
+            continue
         if u[0] == 'opakuj':
             klik(f'#program .hlava[data-id="{sid}"] .pocet-n')
             klik(f'#program .hlava[data-id="{sid}"] .volba-n [data-n="{u[1]}"]')
@@ -448,7 +458,92 @@ def kapitola2_mobil(p):
     ctx.close(); b.close()
 
 
+RESENI3 = {
+    '3.1': [['stale', ['zvedni', ['kdyz', 'druh:odpor',
+        ['vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo'],
+        ['vpravo', 'krok', 'poloz', 'vlevo', 'vlevo', 'krok', 'vpravo']]]]],
+    '3.2': [['stale', ['zvedni', 'krok', ['kdyz', 'druh:spaleny', ['krok'], []], 'poloz',
+        'vpravo', 'vpravo', 'krok', ['kdyz', 'cesta:vpred', ['krok'], []], 'vpravo', 'vpravo']]],
+    '3.3': [['stale', [['kdyz', 'cesta:vpravo', ['vpravo', 'krok'], [['kdyz', 'cesta:vpred', ['krok'], ['vlevo']]]]]]],
+    '3.4': [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
+        'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok']], 'vpravo', 'vpravo']]],
+}
+
+ODEMCENO3 = """localStorage.setItem('malycz.plosnak.v1', JSON.stringify({aktualni: '3.1', levely: Object.fromEntries(
+  ['1.1','1.2','1.3','1.4','2.1','2.2','2.3','2.4'].map(id => [id, {splneno: true}]))}))"""
+
+
+def kapitola3(p):
+    print('Chromium desktop: kapitola 3')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 900})
+    page.evaluate(ODEMCENO3)
+    page.reload(); page.wait_for_function('window.Plosnak')
+    for i, (lid, prg) in enumerate(RESENI3.items()):
+        over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
+        sestav(page, prg, page.click)
+        over(page.evaluate('Plosnak.program') == normal(prg), f'{lid}: program složený přes rozhraní')
+        if lid == '3.1':
+            page.click('#krok'); page.wait_for_timeout(450)
+            page.click('#krok'); page.wait_for_timeout(450)
+            over(page.locator('#program ol.telo.bezi-vetev').count() == 1, '3.1: běžící větev když je zvýrazněná')
+            page.screenshot(path=f'{SNIMKY}/k3-3.1-krokovani.png')
+            page.click('#zastav')
+        if lid == '3.3':
+            page.click('#testy [data-test="1"]')
+            page.screenshot(path=f'{SNIMKY}/k3-3.3-zadani2.png')
+            page.click('#testy [data-test="0"]')
+        page.click('#rychlost [data-r="4"]')
+        page.click('#spust')
+        page.wait_for_timeout(1300)
+        page.screenshot(path=f'{SNIMKY}/k3-{lid}-beh.png')
+        page.click('#rychlost [data-r="0"]')
+        pockej_konec(page, 15000)
+        over(page.evaluate('Plosnak.beh.konec.uspech'), f'{lid}: referenční řešení uspěje')
+        page.wait_for_selector('#vysledek:not([hidden])', timeout=3000)
+        page.screenshot(path=f'{SNIMKY}/k3-{lid}-splneno.png')
+        if i < 3:
+            page.click('[data-akce="dalsi"]')
+    # chybné třídění: hláška o výstupu
+    page.click('#levely [data-level="3.1"]')
+    page.click('#vymaz')
+    sestav(page, [['stale', ['zvedni', 'vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo']]], page.click)
+    page.click('#spust')
+    pockej_konec(page, 15000)
+    over('Na výstup A patří jen odpory' in page.inner_text('#stav'), 'chybné třídění: hláška')
+    page.screenshot(path=f'{SNIMKY}/k3-3.1-chyba.png')
+    ctx.close(); b.close()
+
+
+def kapitola3_mobil(p):
+    print('Chromium mobil 390: podmínky dotykem (3.2)')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 390, 'height': 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page.evaluate(ODEMCENO3.replace("aktualni: '3.1'", "aktualni: '3.2'").replace("'2.4']", "'2.4','3.1']"))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    over(page.evaluate('Plosnak.level') == '3.2', 'mobil: otevřen 3.2')
+    cdp = ctx.new_cdp_session(page)
+    klik = lambda sel: tukni(cdp, page, sel)
+    sestav(page, RESENI3['3.2'], klik)
+    over(page.evaluate('Plosnak.program') == normal(RESENI3['3.2']), 'mobil: program s podmínkami ťukáním')
+    sirka = page.evaluate('document.documentElement.scrollWidth')
+    over(sirka <= 390, f'mobil: bez vodorovného posuvníku ({sirka} px)')
+    klik('#program > .smycka > .telo > li.vetveni:nth-child(3) > .hlava .podminka-n')
+    page.screenshot(path=f'{SNIMKY}/k3-m-volba.png', full_page=True)
+    klik('#program > .smycka > .telo > li.vetveni:nth-child(3) > .hlava .volba-p [data-p="druh:spaleny"]')
+    page.evaluate('window.scrollTo(0, 0)')
+    klik('#rychlost [data-r="0"]')
+    klik('#spust')
+    pockej_konec(page, 15000)
+    over(page.evaluate('Plosnak.beh.konec.uspech'), 'mobil: 3.2 uspěje')
+    page.evaluate('window.scrollTo(0, 0)')
+    page.screenshot(path=f'{SNIMKY}/k3-m-hotovo.png', full_page=True)
+    ctx.close(); b.close()
+
+
 with sync_playwright() as p:
+    kapitola3(p)
+    kapitola3_mobil(p)
     kapitola2(p)
     kapitola2_mobil(p)
     desktop(p)

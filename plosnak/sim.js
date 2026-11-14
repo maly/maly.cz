@@ -2,7 +2,9 @@
  * Plošňák: simulace světa a interpret bloků. Bez DOM, běží v prohlížeči i v Node.
  *
  * Mapa levelu: '#' cestička, '.' mezera, 'X' překážka, 'P' přívod, 'V' výstup,
- * 'R' páska se součástkami (zvednutí z prázdné pásky = konec směny), 'O' patice.
+ * 'R' páska se součástkami (zvednutí z prázdné pásky = konec směny), 'O' patice,
+ * 'A', 'B', 'C' další výstupy, 'K' koš. Výstup může mít pravidlo, co na něj patří (prijima).
+ * Level s `bludiste` dostane pro každé zadání vlastní vygenerovanou mapu (instance()).
  * Přívod a výstup jsou políčka cestičky; panáček na nich stojí a zvedá / pokládá.
  * Zásobník přívodu a přihrádka výstupu se kreslí na sousední políčko ve směru `strana`.
  *
@@ -33,7 +35,24 @@
     poloz:  { nazev: 'polož', druh: 'ruce' },
     opakuj: { nazev: 'opakuj', druh: 'rizeni', telo: true },
     stale:  { nazev: 'opakuj stále', druh: 'rizeni', telo: true },
+    kdyz:   { nazev: 'když', druh: 'rozhod', telo: true, jinak: true },
   };
+
+  // Podmínky bloku když; stejné klíče slouží i jako pravidla výstupů (prijima).
+  const PODMINKY = {
+    'cesta:vpred': 'vpředu je cesta',
+    'cesta:vlevo': 'vlevo je cesta',
+    'cesta:vpravo': 'vpravo je cesta',
+    'drzim': 'držím něco',
+    'druh:propojka': 'držím propojku',
+    'druh:odpor': 'držím odpor',
+    'druh:led': 'držím LED',
+    'druh:spaleny': 'držím spálený kus',
+    'pruh:hneda': 'první pruh je hnědý',
+    'pruh:cervena': 'první pruh je červený',
+    'pruh:oranzova': 'první pruh je oranžový',
+  };
+  const BARVY = { hneda: 'hnědý', cervena: 'červený', oranzova: 'oranžový' };
 
   const DRUHY = {
     propojka:    { jednotne: 'propojka', mnozne: 'propojky' },
@@ -63,21 +82,25 @@
   function pripravLevel(def) {
     const bunky = def.mapa.map(r => r.split(''));
     const vyska = bunky.length, sirka = bunky[0].length;
-    let privod = null, vystup = null;
-    const paska = [], patice = [];
+    let privod = null;
+    const paska = [], patice = [], vystupy = [];
     for (let y = 0; y < vyska; y++) for (let x = 0; x < sirka; x++) {
       const c = bunky[y][x];
       if (c === 'P') privod = { x, y };
-      if (c === 'V') vystup = { x, y };
+      if (JE_VYSTUP.includes(c)) {
+        const cfg = (def.vystupy || {})[c] || (c === 'V' ? def.vystup : null) || {};
+        vystupy.push({ znak: c, x, y, strana: SMER[cfg.strana || 'sever'], posun: STRANY[cfg.strana || 'sever'],
+          prijima: cfg.prijima || null, popis: cfg.popis || (c === 'K' ? 'KOŠ' : c === 'V' ? 'VÝSTUP' : 'VÝSTUP ' + c) });
+      }
       if (c === 'R') paska.push({ x, y });
       if (c === 'O') patice.push({ x, y });
     }
     const strana = (pos, def) => pos && Object.assign(pos, { strana: SMER[def || 'sever'], posun: STRANY[def || 'sever'] });
     const start = def.start || {};
     return Object.assign({}, def, {
-      sirka, vyska, bunky, paska_: paska, patice,
+      sirka, vyska, bunky, paska_: paska, patice, vystupy,
       privodPos: strana(privod, (def.privod || {}).strana),
-      vystupPos: strana(vystup, (def.vystup || {}).strana),
+      vystupPos: vystupy[0] || null,
       startPos: {
         x: start.x != null ? start.x : privod.x,
         y: start.y != null ? start.y : privod.y,
@@ -92,7 +115,58 @@
     if (x < 0 || y < 0 || x >= level.sirka || y >= level.vyska) return '.';
     return level.bunky[y][x];
   }
-  const jeCesta = c => c === '#' || c === 'P' || c === 'V' || c === 'R' || c === 'O';
+  const JE_VYSTUP = 'VABCK';
+  const jeCesta = c => c === '#' || c === 'P' || c === 'R' || c === 'O' || (!!c && JE_VYSTUP.includes(c));
+  const vystupNa = (level, x, y) => level.vystupy.find(v => v.x === x && v.y === y) || null;
+
+  // Dokonalé bludiště: buňky na sudých souřadnicích, chodby mezi nimi. Start vlevo nahoře, výstup vpravo dole.
+  function generujBludiste(r, bw, bh) {
+    const w = 2 * bw - 1, h = 2 * bh - 1;
+    const m = Array.from({ length: h }, () => Array(w).fill('.'));
+    const byl = new Set(), zas = [[0, 0]];
+    byl.add('0,0'); m[0][0] = '#';
+    while (zas.length) {
+      const [cx, cy] = zas[zas.length - 1];
+      const sousedi = SMERY.map(([dx, dy]) => [cx + dx, cy + dy, dx, dy])
+        .filter(([x, y]) => x >= 0 && y >= 0 && x < bw && y < bh && !byl.has(x + ',' + y));
+      if (!sousedi.length) { zas.pop(); continue; }
+      const [nx, ny, dx, dy] = sousedi[Math.floor(r() * sousedi.length)];
+      m[2 * cy + dy][2 * cx + dx] = '#'; m[2 * ny][2 * nx] = '#';
+      byl.add(nx + ',' + ny); zas.push([nx, ny]);
+    }
+    m[h - 1][w - 1] = 'V';
+    return m.map(row => row.join(''));
+  }
+
+  const instance = (() => {
+    const cache = new Map();
+    return function (level, i) {
+      if (!level.bludiste) return level;
+      const k = level.id + ':' + i;
+      if (!cache.has(k)) {
+        const [bw, bh] = level.bludiste;
+        cache.set(k, pripravLevel(Object.assign({}, level, { mapa: generujBludiste(nahoda(hashText(level.id) * 31 + i), bw, bh) })));
+      }
+      return cache.get(k);
+    };
+  })();
+
+  function plati(level, s, k) {
+    const [typ, h] = k.split(':');
+    if (typ === 'cesta') {
+      const [dx, dy] = SMERY[(s.smer + { vpred: 0, vpravo: 1, vlevo: 3 }[h]) % 4];
+      return jeCesta(bunka(level, s.x + dx, s.y + dy));
+    }
+    if (typ === 'drzim') return !!s.drzi;
+    return splnuje(s.drzi, k);
+  }
+  function splnuje(polozka, k) {
+    if (!polozka) return false;
+    const [typ, h] = k.split(':');
+    if (typ === 'druh') return polozka.druh === h;
+    if (typ === 'pruh') return polozka.druh === 'odpor' && polozka.pruh === h;
+    return true;
+  }
 
   // Zadání testu i (0.. viditelná, pak skrytá). Ze semínka, takže opakovatelné.
   function zadani(level, i) {
@@ -103,7 +177,11 @@
       const n = od + Math.floor(r() * (do_ - od + 1));
       const druhy = Array.isArray(p.druh) ? p.druh : [p.druh || 'propojka'];
       const out = [];
-      for (let k = 0; k < n; k++) out.push({ id: id++, druh: druhy[Math.floor(r() * druhy.length)] });
+      for (let k = 0; k < n; k++) {
+        const pol = { id: id++, druh: druhy[Math.floor(r() * druhy.length)] };
+        if (pol.druh === 'odpor') { const pr = p.pruh || ['hneda', 'cervena', 'oranzova']; pol.pruh = pr[Math.floor(r() * pr.length)]; }
+        out.push(pol);
+      }
       return out;
     };
     const privod = level.privodPos ? generuj(level.privod || {}) : [];
@@ -142,7 +220,7 @@
   function stroj(program) { return { zasobnik: [{ seznam: program, i: 0, uzel: null, zbyva: 0 }] }; }
 
   // Projde řídicí bloky a vrátí další akční uzel, nebo null na konci programu.
-  function dalsiAkce(m) {
+  function dalsiAkce(m, level, s) {
     let pojistka = 0;
     for (;;) {
       if (++pojistka > POJISTKA) return { op: '_prazdnaSmycka' };
@@ -156,6 +234,11 @@
       const u = ram.seznam[ram.i++];
       const b = BLOKY[u.op];
       if (!b) continue;
+      if (u.op === 'kdyz') {
+        const ano = plati(level, s, u.podminka || 'drzim'), vetev = ano ? u.telo : u.jinak;
+        if (vetev && vetev.length) m.zasobnik.push({ seznam: vetev, i: 0, uzel: u, zbyva: 1, vetev: ano ? 'telo' : 'jinak' });
+        continue;
+      }
       if (b.telo) {
         const n = u.op === 'stale' ? Infinity : (u.n | 0);
         if (n <= 0 || !(u.telo && u.telo.length)) { if (u.op === 'stale') return { op: '_prazdnaSmycka' }; continue; }
@@ -168,7 +251,7 @@
 
   // Uzly, které právě běží (smyčky a akční blok), pro podsvícení v rozhraní.
   function aktivniUzly(m) {
-    return m.zasobnik.filter(r => r.uzel).map(r => ({
+    return m.zasobnik.filter(r => r.uzel).map(r => r.uzel.op === 'kdyz' ? { id: r.uzel.id, vetev: r.vetev } : ({
       id: r.uzel.id, n: r.uzel.op === 'stale' ? 0 : r.uzel.n,
       kolo: r.uzel.op === 'stale' ? (r.kolo || 0) + 1 : r.uzel.n - r.zbyva + 1,
     }));
@@ -179,7 +262,7 @@
   // Jeden takt: vykoná další akční blok a vrátí událost pro vykreslení.
   function takt(level, s, m) {
     if (s.konec) return null;
-    const u = dalsiAkce(m);
+    const u = dalsiAkce(m, level, s);
     if (!u) { s.konec = vyhodnot(level, s, 'konec'); return { typ: 'konec', konec: s.konec }; }
     if (u.op === '_prazdnaSmycka') { s.konec = { duvod: 'usnul', uspech: false }; return { typ: 'usnul', konec: s.konec }; }
 
@@ -195,6 +278,7 @@
         s.x = nx; s.y = ny;
         if (!jeCesta(c)) { ev.typ = 'pad'; s.konec = { duvod: 'pad', uspech: false }; break; }
         ev.typ = 'krok';
+        if (level.kontrola === 'dojdi' && c === 'V') s.konec = { duvod: 'dosel', uspech: true };
         break;
       }
       case 'skoc': {
@@ -203,6 +287,7 @@
         s.x = nx; s.y = ny;
         if (!jeCesta(c)) { ev.typ = 'pad'; ev.skok = true; s.konec = { duvod: 'pad', uspech: false }; break; }
         ev.typ = 'skok';
+        if (level.kontrola === 'dojdi' && c === 'V') s.konec = { duvod: 'dosel', uspech: true };
         break;
       }
       case 'vlevo': s.smer = (s.smer + 3) % 4; ev.typ = 'otoc'; break;
@@ -231,10 +316,14 @@
         break;
       }
       case 'poloz': {
-        const v = level.vystupPos, p = level.privodPos, k = klic(s.x, s.y);
+        const v = vystupNa(level, s.x, s.y), p = level.privodPos, k = klic(s.x, s.y);
         if (!s.drzi) { ev.typ = 'prazdnaRuka'; break; }
         ev.polozka = s.drzi;
-        if (v && s.x === v.x && s.y === v.y) { s.vystup.push(s.drzi); s.drzi = null; ev.typ = 'poloz'; ev.kam = 'vystup'; break; }
+        if (v) {
+          s.vystup.push(Object.assign({}, s.drzi, { kam: v.znak })); s.drzi = null;
+          ev.typ = 'poloz'; ev.kam = 'vystup'; ev.vystup = v.znak;
+          break;
+        }
         if ((p && s.x === p.x && s.y === p.y) || s.podlaha[k]) {
           s.rozsypano.push({ x: s.x, y: s.y, polozka: s.drzi });
           if (s.podlaha[k]) { s.rozsypano.push({ x: s.x, y: s.y, polozka: s.podlaha[k] }); delete s.podlaha[k]; }
@@ -261,6 +350,7 @@
   // Vyhodnocení na konci směny. Vrací { duvod, uspech, zprava }.
   function vyhodnot(level, s, duvod) {
     const chyby = [];
+    if (level.kontrola === 'dojdi') return { duvod, uspech: false, zprava: 'Nedošel k výstupu.' };
     if (s.rozsypano.length) chyby.push('Rozsypal součástky.');
     if (s.drzi) chyby.push('Směna skončila a panáček pořád drží ' + (s.drzi.druh === 'led' ? 'LED' : nazevDruhu(s.drzi.druh, 1).replace(/a$/, 'u')) + '.');
     const lezi = Object.keys(s.podlaha).map(k => k.split(',').map(Number));
@@ -277,13 +367,32 @@
       return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
     }
     if (s.privod.length) chyby.push('V přívodu ' + (s.privod.length === 1 ? 'zůstala ' : 'zůstaly ') + soucastky(s.privod.length) + '.');
+    for (const p of s.vystup) {
+      const v = level.vystupy.find(x => x.znak === p.kam);
+      if (v && v.prijima && !splnuje(p, v.prijima)) {
+        chyby.unshift(`Na ${v.znak === 'K' ? 'koš' : v.znak === 'V' ? 'výstup' : 'výstup ' + v.znak} patří ${popisPravidla(v.prijima)}, ale skončil${p.druh === 'odpor' || p.druh === 'spaleny' || p.druh === 'kondenzator' ? '' : 'a'} tam ${nazevPolozky(p)}.`);
+        break;
+      }
+    }
     if (!chyby.length && s.vystup.length !== s.celkem) chyby.push('Na výstupu je ' + s.vystup.length + ' z ' + s.celkem + '.');
     return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
+  }
+
+  function popisPravidla(k) {
+    const [typ, h] = k.split(':');
+    if (typ === 'druh') return { propojka: 'jen propojky', odpor: 'jen odpory', led: 'jen LED', spaleny: 'jen spálené kusy' }[h];
+    if (typ === 'pruh') return 'jen odpory s ' + { hneda: 'hnědým', cervena: 'červeným', oranzova: 'oranžovým' }[h] + ' prvním pruhem';
+    return 'cokoli';
+  }
+  function nazevPolozky(p) {
+    if (p.druh === 'odpor' && p.pruh) return 'odpor s ' + { hneda: 'hnědým', cervena: 'červeným', oranzova: 'oranžovým' }[p.pruh] + ' pruhem';
+    return nazevDruhu(p.druh, 1);
   }
 
   const ZPRAVY = { pad: 'Spadl z cestičky.', usnul: 'Po 999 taktech usnul.' };
 
   function spustTest(level, program, i) {
+    level = instance(level, i);
     const s = novyStav(level, zadani(level, i)), m = stroj(program);
     while (!s.konec) takt(level, s, m);
     return {
@@ -294,7 +403,7 @@
 
   function pocetBloku(program) {
     let n = 0;
-    for (const u of program) { n++; if (u.telo) n += pocetBloku(u.telo); }
+    for (const u of program) { n++; if (u.telo) n += pocetBloku(u.telo); if (u.jinak) n += pocetBloku(u.jinak); }
     return n;
   }
 
@@ -308,7 +417,7 @@
   }
 
   return {
-    SMERY, SMER, STRANY, BLOKY, DRUHY, MAX_TAKTU,
+    SMERY, SMER, STRANY, BLOKY, PODMINKY, BARVY, instance, plati, splnuje, vystupNa, generujBludiste, DRUHY, MAX_TAKTU,
     nahoda, hashText, pripravLevel, bunka, jeCesta, zadani,
     novyStav, snimek, stroj, takt, spustTest, vyhodnotReseni, pocetBloku, nazevDruhu, ZPRAVY,
   };

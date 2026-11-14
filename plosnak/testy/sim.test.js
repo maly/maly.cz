@@ -6,11 +6,12 @@ const LEVELY = require('../levely.js');
 const RESENI = require('./reseni.js');
 
 let id = 0;
-// Zápis programu: ['krok', 'zvedni', ['opakuj', 3, [...]], ['stale', [...]]]
+// Zápis programu: ['krok', 'zvedni', ['opakuj', 3, [...]], ['stale', [...]], ['kdyz', 'podminka', [pak], [jinak]]]
 function prg(zapis) {
   return zapis.map(z => {
     if (typeof z === 'string') return { id: 'u' + ++id, op: z };
     if (z[0] === 'opakuj') return { id: 'u' + ++id, op: 'opakuj', n: z[1], telo: prg(z[2]) };
+    if (z[0] === 'kdyz') return { id: 'u' + ++id, op: 'kdyz', podminka: z[1], telo: prg(z[2]), jinak: prg(z[3] || []) };
     return { id: 'u' + ++id, op: z[0], telo: prg(z[1]) };
   });
 }
@@ -47,8 +48,9 @@ for (const def of LEVELY) {
       if (ch.zprava) assert.match(spatne.zprava, ch.zprava);
     });
   }
-  test(`level ${def.id}: palety obsahují jen známé bloky`, () => {
+  test(`level ${def.id}: palety obsahují jen známé bloky a podmínky`, () => {
     for (const b of def.bloky) assert.ok(S.BLOKY[b], b);
+    for (const p of def.podminky || []) assert.ok(S.PODMINKY[p], p);
   });
 }
 
@@ -119,4 +121,21 @@ test('zadání ze semínka jsou opakovatelná a liší se', () => {
   assert.deepStrictEqual(S.zadani(l, 2), S.zadani(l, 2));
   const pocty = new Set([0, 1, 2, 3, 4, 5].map(i => S.zadani(l, i).privod.length));
   assert.ok(pocty.size > 1);
+});
+
+test('bludiště: každé zadání jiné, opakovatelné, výstup dosažitelný', () => {
+  const def = LEVELY.find(l => l.bludiste), l = S.pripravLevel(def);
+  const mapy = [0, 1, 2, 3, 4].map(i => S.instance(l, i).mapa.join('|'));
+  assert.ok(new Set(mapy).size >= 4);
+  assert.deepStrictEqual(S.instance(l, 2).mapa, S.instance(S.pripravLevel(def), 2).mapa);
+});
+
+test('podmínky čtou desku vzhledem k natočení panáčka', () => {
+  const l = S.pripravLevel({ id: 't', mapa: ['.#.', '#P.', '...'], privod: { pocet: [1, 1] }, start: { smer: 'vychod' } });
+  const s = S.novyStav(l, S.zadani(l, 0));
+  assert.strictEqual(S.plati(l, s, 'cesta:vpred'), false);
+  assert.strictEqual(S.plati(l, s, 'cesta:vlevo'), true);
+  assert.strictEqual(S.plati(l, s, 'cesta:vpravo'), false);
+  s.smer = 2;
+  assert.strictEqual(S.plati(l, s, 'cesta:vpravo'), true);
 });

@@ -38,6 +38,7 @@
     const u = { id: 'b' + dalsiId++, op };
     if (op === 'opakuj') { u.n = 2; u.telo = []; }
     if (op === 'stale') u.telo = [];
+    if (op === 'kdyz') { u.podminka = (level.podminky || ['drzim'])[0]; u.telo = []; u.jinak = []; }
     return u;
   }
   function ocisti(prg, povolene) {
@@ -45,17 +46,26 @@
       const n = novyUzel(u.op);
       if (n.n) n.n = Math.max(2, Math.min(9, u.n | 0));
       if (n.telo) n.telo = ocisti(u.telo, povolene);
+      if (n.jinak) n.jinak = ocisti(u.jinak, povolene);
+      if (n.podminka && (level.podminky || []).includes(u.podminka)) n.podminka = u.podminka;
       return n;
     });
   }
   function bezId(prg) {
-    return prg.map(u => { const o = { op: u.op }; if (u.n) o.n = u.n; if (u.telo) o.telo = bezId(u.telo); return o; });
+    return prg.map(u => {
+      const o = { op: u.op };
+      if (u.podminka) o.podminka = u.podminka;
+      if (u.n) o.n = u.n;
+      if (u.telo) o.telo = bezId(u.telo);
+      if (u.jinak) o.jinak = bezId(u.jinak);
+      return o;
+    });
   }
   function ulozProgram() { zaznam().program = bezId(program); uloz(); }
 
   // ---------- stav hry ----------
 
-  let level, program = [], kurzor = null, volbaN = null, testIdx = 0;
+  let zaklad, level, program = [], kurzor = null, volbaN = null, volbaP = null, testIdx = 0;
   let rychlost = RYCHLOST[data.rychlost] != null ? data.rychlost : '1';
   let beh = null;     // { stav, stroj, bezi, hotovo, krokovani }
   let vis = null;     // { stav, pred, po, ev, t0, dur, poza, bublina }
@@ -99,8 +109,8 @@
     const p = level.privodPos, [dx, dy] = p.posun;
     return { x: stredX(p.x) + dx * .4 * T, y: stredY(p.y) + dy * .4 * T };
   }
-  function bodVystupu() {
-    const v = level.vystupPos, [dx, dy] = v.posun;
+  function bodVystupu(znak) {
+    const v = level.vystupy.find(x => x.znak === znak) || level.vystupPos, [dx, dy] = v.posun;
     return { x: stredX(v.x + dx), y: stredY(v.y + dy) - .22 * T };
   }
 
@@ -215,7 +225,10 @@
 
   // ---------- součástky ----------
 
-  function kresliPolozku(c, druh, x, y, s = 1, uhel = 0) {
+  const PRUHY = { hneda: '#7b4b2a', cervena: '#d0312d', oranzova: '#f08a12' };
+  function kresliPolozku(c, pol, x, y, s = 1, uhel = 0) {
+    if (!pol) return;
+    const druh = typeof pol === 'string' ? pol : pol.druh;
     const u = T * s, lw = Math.max(1.2, u * .03);
     c.save(); c.translate(x, y); c.rotate(uhel); c.lineCap = 'round'; c.lineJoin = 'round';
     switch (druh) {
@@ -231,7 +244,19 @@
         c.strokeStyle = K; c.lineWidth = u * .04;
         c.beginPath(); c.moveTo(-.3 * u, 0); c.lineTo(.3 * u, 0); c.stroke();
         c.fillStyle = '#e8cf9f'; c.lineWidth = lw; zaoblene(c, -.17 * u, -.08 * u, .34 * u, .16 * u, .07 * u); c.fill(); c.stroke();
-        ['#c0392b', '#7b4b2a', '#e67e22'].forEach((b, i) => { c.fillStyle = b; c.fillRect((-.1 + i * .07) * u, -.075 * u, .035 * u, .15 * u); });
+        c.fillStyle = PRUHY[pol.pruh] || '#c0392b'; c.fillRect(-.12 * u, -.075 * u, .06 * u, .15 * u);
+        c.fillStyle = '#1d1d1d'; c.fillRect(-.02 * u, -.075 * u, .035 * u, .15 * u);
+        c.fillStyle = '#c99a1e'; c.fillRect(.07 * u, -.075 * u, .035 * u, .15 * u);
+        break;
+      case 'spaleny':                                // začernalý kus s obláčkem kouře
+        c.strokeStyle = K; c.lineWidth = u * .1;
+        c.beginPath(); c.moveTo(-.24 * u, 0); c.lineTo(.24 * u, 0); c.stroke();
+        c.strokeStyle = '#3b3530'; c.lineWidth = u * .05;
+        c.beginPath(); c.moveTo(-.22 * u, 0); c.lineTo(.22 * u, 0); c.stroke();
+        c.fillStyle = '#1a1714';
+        c.beginPath(); c.ellipse(-.02 * u, 0, .1 * u, .07 * u, .3, 0, TAU); c.fill();
+        c.strokeStyle = 'rgba(120,120,120,.85)'; c.lineWidth = Math.max(1, u * .03);
+        c.beginPath(); c.moveTo(0, -.06 * u); c.quadraticCurveTo(.08 * u, -.14 * u, 0, -.2 * u); c.quadraticCurveTo(-.08 * u, -.26 * u, .02 * u, -.32 * u); c.stroke();
         break;
       case 'led':
         c.fillStyle = '#e74c3c'; c.strokeStyle = K; c.lineWidth = lw;
@@ -274,40 +299,56 @@
     c.fillText(String(Math.max(0, sn.privod.length)), bx + w / 2 - .06 * T, by - h / 2 + .03 * T);
     // okénko s další součástkou
     c.fillStyle = '#c9d6cf'; c.fillRect(bx - w * .38, by - h * .32, w * .52, h * .5); c.strokeRect(bx - w * .38, by - h * .32, w * .52, h * .5);
-    if (sn.privod.length) kresliPolozku(c, sn.privod[0].druh, bx - w * .12, by - h * .07, .62);
+    if (sn.privod.length) kresliPolozku(c, sn.privod[0], bx - w * .12, by - h * .07, .62);
     // součástka připravená na kraji skluzu
-    if (sn.privod.length && !skryjPrvni) kresliPolozku(c, sn.privod[0].druh, ret.x, ret.y, .9, dx ? Math.PI / 2 : 0);
+    if (sn.privod.length && !skryjPrvni) kresliPolozku(c, sn.privod[0], ret.x, ret.y, .9, dx ? Math.PI / 2 : 0);
   }
 
-  function kresliVystup(c, sn) {
-    const v = level.vystupPos; if (!v) return;
-    const [dx, dy] = v.posun;
+  function kresliVystup(c, sn, v) {
+    if (level.kontrola === 'dojdi') return kresliCilBludiste(c, v);
+    const [dx, dy] = v.posun, kos = v.znak === 'K';
     const bx = stredX(v.x + dx), by = stredY(v.y + dy) - .2 * T, lw = Math.max(1.5, T * .03);
     const w = .86 * T, h = .52 * T, celo = .2 * T;
+    const mono = px => `800 ${Math.max(7, Math.round(px))}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     c.lineWidth = lw; c.strokeStyle = K;
-    c.fillStyle = '#f7f8fa'; c.fillRect(bx - w / 2, by - h / 2, w, h); c.strokeRect(bx - w / 2, by - h / 2, w, h);
-    c.fillStyle = '#c3ccd5'; c.fillRect(bx - w / 2 + .07 * T, by - h / 2 + .06 * T, w - .14 * T, h - .1 * T);
-    sn.vystup.forEach((p, i) => {
+    c.fillStyle = kos ? '#6b7178' : '#f7f8fa'; c.fillRect(bx - w / 2, by - h / 2, w, h); c.strokeRect(bx - w / 2, by - h / 2, w, h);
+    c.fillStyle = kos ? '#3c4147' : '#c3ccd5'; c.fillRect(bx - w / 2 + .07 * T, by - h / 2 + .06 * T, w - .14 * T, h - .1 * T);
+    const moje = sn.vystup.filter(p => (p.kam || 'V') === v.znak);
+    moje.forEach((p, i) => {
       const k = i % 4, r = Math.floor(i / 4) % 2;
-      kresliPolozku(c, p.druh, bx - w * .26 + k * w * .17, by - h * .12 + r * h * .28, .55, .5 + i * .7);
+      kresliPolozku(c, p, bx - w * .26 + k * w * .17, by - h * .12 + r * h * .28, .55, .5 + i * .7);
     });
-    c.fillStyle = '#e4e9ee'; c.fillRect(bx - w / 2, by + h / 2, w, celo); c.strokeRect(bx - w / 2, by + h / 2, w, celo);
-    c.fillStyle = K; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `800 ${Math.max(7, Math.round(T * .12))}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-    c.fillText('VÝSTUP', bx, by + h / 2 + celo * .54);
-    c.fillStyle = W; c.beginPath(); c.arc(bx + w / 2 - .06 * T, by - h / 2 + .02 * T, .15 * T, 0, TAU); c.fill(); c.stroke();
-    c.fillStyle = K; c.font = `800 ${Math.max(8, Math.round(T * .16))}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-    c.fillText(String(sn.vystup.length), bx + w / 2 - .06 * T, by - h / 2 + .03 * T);
+    c.fillStyle = kos ? '#4a4f55' : '#e4e9ee'; c.fillRect(bx - w / 2, by + h / 2, w, celo); c.strokeRect(bx - w / 2, by + h / 2, w, celo);
+    c.fillStyle = kos ? W : K; c.textAlign = 'center'; c.textBaseline = 'middle';
+    let fs = T * .12; c.font = mono(fs);
+    while (fs > 6 && c.measureText(v.popis).width > w - 6) { fs -= .5; c.font = mono(fs); }
+    c.fillText(v.popis, bx, by + h / 2 + celo * .54);
+    if (v.znak !== 'V' && !kos) {                      // písmeno výstupu
+      c.fillStyle = K; c.fillRect(bx - w / 2, by - h / 2, .26 * T, .24 * T);
+      c.fillStyle = W; c.font = mono(T * .16); c.fillText(v.znak, bx - w / 2 + .13 * T, by - h / 2 + .13 * T);
+    }
+    c.fillStyle = W; c.strokeStyle = K; c.beginPath(); c.arc(bx + w / 2 - .06 * T, by - h / 2 + .02 * T, .15 * T, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = K; c.font = mono(T * .16);
+    c.fillText(String(moje.length), bx + w / 2 - .06 * T, by - h / 2 + .03 * T);
+  }
+
+  // Cíl bludiště: praporek přímo na políčku výstupu.
+  function kresliCilBludiste(c, v) {
+    const x = stredX(v.x), y = stredY(v.y), lw = Math.max(1.5, T * .03);
+    c.lineWidth = lw; c.strokeStyle = K;
+    c.beginPath(); c.moveTo(x - .05 * T, y + .2 * T); c.lineTo(x - .05 * T, y - .45 * T); c.stroke();
+    c.fillStyle = Y; c.beginPath(); c.moveTo(x - .05 * T, y - .45 * T); c.lineTo(x + .32 * T, y - .32 * T); c.lineTo(x - .05 * T, y - .19 * T); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(16,19,23,.25)'; c.beginPath(); c.ellipse(x - .05 * T, y + .2 * T, .1 * T, .04 * T, 0, 0, TAU); c.fill();
   }
 
   function kresliPodlahu(c, sn) {
     for (const k in sn.podlaha) {
       const [x, y] = k.split(',').map(Number), b = bodPolozeni(x, y);
-      kresliPolozku(c, sn.podlaha[k].druh, b.x, b.y, .9, .25);
+      kresliPolozku(c, sn.podlaha[k], b.x, b.y, .9, .25);
     }
     sn.rozsypano.forEach((r, i) => {
       const b = naZemi(r.x, r.y);
-      kresliPolozku(c, r.polozka.druh, b.x + (i % 2 ? .16 : -.14) * T, b.y - (i % 2) * .06 * T, .75, 1 + i * 2.1);
+      kresliPolozku(c, r.polozka, b.x + (i % 2 ? .16 : -.14) * T, b.y - (i % 2) * .06 * T, .75, 1 + i * 2.1);
       c.strokeStyle = K; c.lineWidth = 1.5;
       for (let j = 0; j < 3; j++) {
         const a = i * 2 + j * 2.2, d = .26 * T;
@@ -388,7 +429,7 @@
     // nesená součástka mezi rukama
     if (o.polozka) {
       const m = lerpP(ruce[0], ruce[1], .5);
-      kresliPolozku(c, o.polozka.druh, m.x, m.y - .35 * u, .9);
+      kresliPolozku(c, o.polozka, m.x, m.y - .35 * u, .9);
     }
     if (o.hvezdy) {
       for (let i = 0; i < 3; i++) {
@@ -515,7 +556,7 @@
         break;
       }
       case 'poloz': case 'rozsyp': {
-        const dst = ev.kam === 'vystup' ? bodVystupu() : bodPolozeni(z.x, z.y);
+        const dst = ev.kam === 'vystup' ? bodVystupu(ev.vystup) : bodPolozeni(z.x, z.y);
         o.ruceCil = dst;
         if (p < .55) { const k = ease(p / .55); o.nahoru = 1 - k; o.ruceK = k; o.polozka = ev.polozka; }
         else { o.nahoru = 0; o.ruceK = 1 - ease((p - .55) / .45); o.polozka = null; }
@@ -547,7 +588,7 @@
     // zásobníky a panáček podle hloubky (co je níž, je blíž)
     const veci = [];
     if (level.privodPos) veci.push([level.privodPos.y + level.privodPos.posun[1], () => kresliPrivod(g, sn, false)]);
-    if (level.vystupPos) veci.push([level.vystupPos.y + level.vystupPos.posun[1], () => kresliVystup(g, sn)]);
+    for (const v of level.vystupy) veci.push([level.kontrola === 'dojdi' ? v.y : v.y + v.posun[1], () => kresliVystup(g, sn, v)]);
     let hlava = null;
     const py = f.visi ? (f.visi.y - OY) / T : (f.y - OY) / T - .5;
     veci.push([py, () => { hlava = f.visi ? kresliVisiciho(g, f.visi.x, f.visi.y, f.smer, now) : kresliPanacka(g, f.x, f.y, f.smer, f.o); }]);
@@ -719,6 +760,7 @@
     poloz: '<path d="M4 17h12M10 3v10M6 9l4 4 4-4"/>',
     opakuj: '<path d="M4 10a6 6 0 0 1 10-4.5L16 7M16 3v4h-4M16 10a6 6 0 0 1-10 4.5L4 13M4 17v-4h4"/>',
     stale: '<path d="M10 10c-2-3-6-3-6 0s4 3 6 0 6-3 6 0-4 3-6 0"/>',
+    kdyz: '<path d="M10 2 18 10 10 18 2 10Z"/><path d="M8.3 8a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1v.3M10 13.6v.1"/>',
   };
   const ikona = op => `<svg class="ikona" viewBox="0 0 20 20" aria-hidden="true">${IKONY[op] || ''}</svg>`;
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -747,22 +789,24 @@
 
   // ---------- program: strom bloků ----------
   // Kurzor určuje, kam se vloží blok klepnutím v paletě:
-  // { id, dovnitr: false } = za blok, { id, dovnitr: true } = na konec těla smyčky, null = na konec programu.
+  // { id, dovnitr: false } = za blok, { id, dovnitr: 'telo' | 'jinak' } = na konec těla, null = na konec programu.
 
   function najdi(id, seznam = program, rodic = null) {
     for (let i = 0; i < seznam.length; i++) {
       const u = seznam[i];
       if (u.id === id) return { seznam, i, uzel: u, rodic };
       if (u.telo) { const r = najdi(id, u.telo, u); if (r) return r; }
+      if (u.jinak) { const r = najdi(id, u.jinak, u); if (r) return r; }
     }
     return null;
   }
-  const obsahuje = (u, id) => u.id === id || (u.telo || []).some(c => obsahuje(c, id));
+  const obsahuje = (u, id) => u.id === id || (u.telo || []).concat(u.jinak || []).some(c => obsahuje(c, id));
 
   function mistoKurzoru() {
     const f = kurzor && najdi(kurzor.id);
     if (!f) return { seznam: program, i: program.length };
-    if (kurzor.dovnitr && f.uzel.telo) return { seznam: f.uzel.telo, i: f.uzel.telo.length };
+    const telo = kurzor.dovnitr && f.uzel[kurzor.dovnitr];
+    if (telo) return { seznam: telo, i: telo.length };
     return { seznam: f.seznam, i: f.i + 1 };
   }
 
@@ -785,15 +829,31 @@
       const volba = volbaN === u.id
         ? `<div class="volba-n" role="group" aria-label="Kolikrát">${[2, 3, 4, 5, 6, 7, 8, 9].map(k =>
           `<button type="button" data-n="${k}" aria-pressed="${k === u.n}">${k}</button>`).join('')}</div>` : '';
-      const hlava = el('div', 'blok hlava b-rizeni' + (kurzor && kurzor.id === u.id && kurzor.dovnitr ? ' vybrany' : ''),
-        `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${u.op === 'stale' ? 'opakuj stále' : 'opakuj'}</span>${n}<span class="kolo"></span>${smaz}${volba}`);
+      const kdyz = u.op === 'kdyz';
+      const pod = kdyz ? `<button type="button" class="podminka-n" aria-label="Podmínka" aria-expanded="${volbaP === u.id}">${S.PODMINKY[u.podminka]}</button>` : '';
+      const volbaPod = kdyz && volbaP === u.id
+        ? `<div class="volba-p" role="group" aria-label="Podmínka">${(level.podminky || []).map(k =>
+          `<button type="button" data-p="${k}" aria-pressed="${k === u.podminka}">${S.PODMINKY[k]}</button>`).join('')}</div>` : '';
+      const vyb = d => kurzor && kurzor.id === u.id && kurzor.dovnitr === d ? ' vybrany' : '';
+      if (kdyz) li.classList.add('vetveni');
+      const hlava = el('div', 'blok hlava b-' + b.druh + vyb('telo'),
+        `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${kdyz ? 'když' : u.op === 'stale' ? 'opakuj stále' : 'opakuj'}</span>${n}${pod}<span class="kolo"></span>${smaz}${volba}${volbaPod}`);
       hlava.dataset.id = u.id; hlava.tabIndex = 0;
       const telo = el('ol', 'telo');
-      if (!u.telo.length) telo.appendChild(el('li', 'prazdne-telo', 'sem patří opakované bloky'));
+      if (!u.telo.length) telo.appendChild(el('li', 'prazdne-telo', kdyz ? 'sem patří, co dělat, když platí' : 'sem patří opakované bloky'));
       u.telo.forEach(c => telo.appendChild(uzelEl(c)));
-      const pata = el('div', 'pata' + (kurzor && kurzor.id === u.id && !kurzor.dovnitr ? ' vybrany' : ''));
-      pata.dataset.id = u.id; pata.title = 'Vkládat za smyčku';
-      li.append(hlava, telo, pata);
+      li.append(hlava, telo);
+      if (kdyz) {
+        const jh = el('div', 'jinak-hlava' + vyb('jinak'), 'jinak');
+        jh.dataset.id = u.id; jh.tabIndex = 0;
+        const jinak = el('ol', 'telo jinak');
+        if (!u.jinak.length) jinak.appendChild(el('li', 'prazdne-telo', 'sem patří, co dělat jinak'));
+        u.jinak.forEach(c => jinak.appendChild(uzelEl(c)));
+        li.append(jh, jinak);
+      }
+      const pata = el('div', 'pata' + vyb(false));
+      pata.dataset.id = u.id; pata.title = kdyz ? 'Vkládat za blok když' : 'Vkládat za smyčku';
+      li.appendChild(pata);
       return li;
     };
     program.forEach(u => ol.appendChild(uzelEl(u)));
@@ -806,6 +866,7 @@
 
   function zvyrazni(ev) {
     document.querySelectorAll('#program .aktivni').forEach(e => e.classList.remove('aktivni'));
+    document.querySelectorAll('#program .bezi-vetev').forEach(e => e.classList.remove('bezi-vetev'));
     document.querySelectorAll('#program .smycka.bezi-smycka').forEach(e => {
       e.classList.remove('bezi-smycka'); e.querySelector(':scope > .hlava .kolo').textContent = '';
     });
@@ -814,6 +875,7 @@
       const e = document.querySelector(`#program li.smycka[data-id="${s.id}"]`);
       if (!e) continue;
       e.classList.add('bezi-smycka');
+      if (s.vetev) { const t = e.querySelector(s.vetev === 'jinak' ? ':scope > ol.jinak' : ':scope > ol.telo'); if (t) t.classList.add('bezi-vetev'); continue; }
       e.querySelector(':scope > .hlava .kolo').textContent = s.n ? `${s.kolo}/${s.n}` : `${s.kolo}.`;
     }
     const e = document.querySelector(`#program li.blok[data-id="${ev.id}"]`);
@@ -848,11 +910,16 @@
     if (!beh) $('#vysledek').hidden = true;
   }
 
+  function drzenoText(p) {
+    if (p.druh === 'odpor' && p.pruh) return 'odpor, první pruh ' + S.BARVY[p.pruh];
+    return { propojka: 'propojku', spaleny: 'spálený kus' }[p.druh] || S.nazevDruhu(p.druh, 1);
+  }
+
   function stavRadek(text, druh) {
     const e = $('#stav');
     if (text == null) {
       const st = beh ? (vis.ev ? vis.po : vis.stav) : null;
-      text = st ? `Takt ${st.takt}` + (st.drzi ? ' · drží ' + (st.drzi.druh === 'propojka' ? 'propojku' : S.nazevDruhu(st.drzi.druh, 1)) : '') : 'Připraven.';
+      text = st ? `Takt ${st.takt}` + (st.drzi ? ' · drží ' + drzenoText(st.drzi) : '') : 'Připraven.';
       druh = '';
     }
     e.textContent = text; e.className = 'stav' + (druh ? ' ' + druh : '');
@@ -866,7 +933,7 @@
   function vlozBlok(op, misto) {
     const u = novyUzel(op), m = misto || mistoKurzoru();
     m.seznam.splice(m.i, 0, u);
-    kurzor = { id: u.id, dovnitr: !!u.telo };
+    kurzor = { id: u.id, dovnitr: u.telo ? 'telo' : false };
     zmenaProgramu();
   }
 
@@ -876,7 +943,8 @@
     f.seznam.splice(f.i, 1);
     if (kurzor && obsahuje(f.uzel, kurzor.id)) {
       const pred = f.seznam[f.i - 1];
-      kurzor = pred ? { id: pred.id, dovnitr: false } : f.rodic ? { id: f.rodic.id, dovnitr: true } : null;
+      kurzor = pred ? { id: pred.id, dovnitr: false }
+        : f.rodic ? { id: f.rodic.id, dovnitr: f.seznam === f.rodic.jinak ? 'jinak' : 'telo' } : null;
     }
     zmenaProgramu();
   }
@@ -904,11 +972,12 @@
       for (const u of vid) {
         const e = li(u.id), r = e.getBoundingClientRect();
         out.push({ seznam, i: seznam.indexOf(u), y: r.top - 2, x: r.left, uzel: smycka });
-        if (u.telo) {
-          projdi(u.telo, u.id);
-          if (!u.telo.some(c => c.id !== vyjma)) {
-            const t = e.querySelector(':scope > ol.telo').getBoundingClientRect();
-            out.push({ seznam: u.telo, i: 0, y: t.top + t.height / 2, x: t.left, uzel: u.id });
+        for (const [klic, sel] of [['telo', ':scope > ol.telo:not(.jinak)'], ['jinak', ':scope > ol.jinak']]) {
+          if (!u[klic]) continue;
+          projdi(u[klic], u.id);
+          if (!u[klic].some(c => c.id !== vyjma)) {
+            const t = e.querySelector(sel).getBoundingClientRect();
+            out.push({ seznam: u[klic], i: 0, y: t.top + t.height / 2, x: t.left, uzel: u.id });
           }
         }
       }
@@ -932,7 +1001,7 @@
 
   function onDown(e) {
     if (e.button > 0 || tah) return;
-    if (e.target.closest('.smaz, .pocet-n, .volba-n')) return;
+    if (e.target.closest('.smaz, .pocet-n, .volba-n, .podminka-n, .volba-p')) return;
     const blok = e.target.closest('.blok');
     if (!blok) return;
     const zdroj = blok.closest('#paleta') ? 'paleta' : 'program';
@@ -954,7 +1023,7 @@
 
   function zacniTah() {
     tah.aktivni = true;
-    if (volbaN) { volbaN = null; vykresliProgram(); tah.el = document.querySelector(`#program [data-id="${tah.id}"]`) || tah.el; }
+    if (volbaN || volbaP) { volbaN = volbaP = null; vykresliProgram(); tah.el = document.querySelector(`#program li[data-id="${tah.id}"]`) || tah.el; }
     const r = tah.el.getBoundingClientRect();
     const d = tah.el.cloneNode(true);
     d.querySelectorAll('.vybrany, .aktivni').forEach(x => x.classList.remove('vybrany', 'aktivni'));
@@ -1008,8 +1077,8 @@
       if (t.zdroj === 'paleta') vlozBlok(t.op);
       else {
         const f = najdi(t.id);
-        kurzor = { id: t.id, dovnitr: !!(f && f.uzel.telo) };
-        volbaN = null; vykresliProgram();
+        kurzor = { id: t.id, dovnitr: f && f.uzel.telo ? 'telo' : false };
+        volbaN = volbaP = null; vykresliProgram();
       }
       return;
     }
@@ -1043,16 +1112,26 @@
       if (k) {
         const f = najdi(k.closest('[data-id]').dataset.id);
         if (f) f.uzel.n = +k.dataset.n;
-        volbaN = null; zmenaProgramu(); return;
+        volbaN = volbaP = null; zmenaProgramu(); return;
       }
+      const pp = e.target.closest('.podminka-n');
+      if (pp) { const id = pp.closest('[data-id]').dataset.id; volbaP = volbaP === id ? null : id; volbaN = null; vykresliProgram(); return; }
+      const kp = e.target.closest('.volba-p button');
+      if (kp) {
+        const f = najdi(kp.closest('[data-id]').dataset.id);
+        if (f) f.uzel.podminka = kp.dataset.p;
+        volbaP = null; zmenaProgramu(); return;
+      }
+      const jh = e.target.closest('.jinak-hlava');
+      if (jh) { kurzor = { id: jh.dataset.id, dovnitr: 'jinak' }; volbaN = volbaP = null; vykresliProgram(); return; }
       const pata = e.target.closest('.pata');
-      if (pata) { kurzor = { id: pata.dataset.id, dovnitr: false }; volbaN = null; vykresliProgram(); }
+      if (pata) { kurzor = { id: pata.dataset.id, dovnitr: false }; volbaN = volbaP = null; vykresliProgram(); }
     });
     document.addEventListener('pointerdown', e => {
-      if (volbaN && !e.target.closest('.volba-n, .pocet-n')) {
-        volbaN = null;                                     // bez překreslení, ať nezmizí cíl právě začínajícího tahu
-        document.querySelectorAll('#program .volba-n').forEach(x => x.remove());
-        document.querySelectorAll('#program .pocet-n').forEach(x => x.setAttribute('aria-expanded', 'false'));
+      if ((volbaN || volbaP) && !e.target.closest('.volba-n, .pocet-n, .volba-p, .podminka-n')) {
+        volbaN = volbaP = null;                            // bez překreslení, ať nezmizí cíl právě začínajícího tahu
+        document.querySelectorAll('#program .volba-n, #program .volba-p').forEach(x => x.remove());
+        document.querySelectorAll('#program .pocet-n, #program .podminka-n').forEach(x => x.setAttribute('aria-expanded', 'false'));
       }
     }, true);
     $('#program').addEventListener('keydown', e => {
@@ -1060,7 +1139,7 @@
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); smazBlok(b.dataset.id); }
       if (e.key === 'Enter' || e.key === ' ') {
         if (e.target.closest('button')) return;
-        e.preventDefault(); kurzor = { id: b.dataset.id, dovnitr: b.classList.contains('hlava') }; vykresliProgram();
+        e.preventDefault(); kurzor = { id: b.dataset.id, dovnitr: b.classList.contains('hlava') ? 'telo' : false }; vykresliProgram();
       }
     });
     $('#vymaz').addEventListener('click', () => { program = []; kurzor = null; zmenaProgramu(); });
@@ -1075,7 +1154,8 @@
     });
     $('#testy').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
-      testIdx = +b.dataset.test; zastav(); vykresliTesty();
+      testIdx = +b.dataset.test; level = S.instance(zaklad, testIdx);
+      zastav(); vykresliTesty(); rozmer();
     });
     $('#vysledek').addEventListener('click', e => {
       if (e.target.closest('[data-akce="dalsi"]')) { const d = dalsiLevel(); if (d) nactiLevel(d); return; }
@@ -1096,7 +1176,8 @@
   }
 
   function nactiLevel(def) {
-    level = S.pripravLevel(def);
+    zaklad = S.pripravLevel(def);
+    level = S.instance(zaklad, 0);
     data.aktualni = level.id; uloz();
     document.body.classList.remove('bezi');
     $('#vysledek').hidden = true;

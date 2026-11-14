@@ -86,4 +86,66 @@ module.exports = {
       { program: [['stale', ['krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo']]], duvod: 'usnul' },
     ],
   },
+  '3.1': {
+    reference: [['stale', ['zvedni', ['kdyz', 'druh:odpor',
+      ['vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo'],
+      ['vpravo', 'krok', 'poloz', 'vlevo', 'vlevo', 'krok', 'vpravo']]]]],
+    chybna: [
+      { program: [['stale', ['zvedni', 'vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo']]], zprava: /Na výstup A patří jen odpory, ale skončila tam LED/ },
+      { program: [['stale', ['zvedni', ['kdyz', 'druh:led',
+        ['vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo'],
+        ['vpravo', 'krok', 'poloz', 'vlevo', 'vlevo', 'krok', 'vpravo']]]]], zprava: /patří jen/ },
+      { program: [['stale', ['zvedni', ['kdyz', 'druh:odpor',
+        ['vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'],
+        ['vpravo', 'krok', 'poloz', 'vlevo', 'vlevo', 'krok', 'vpravo']]]]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', ['kdyz', 'druh:odpor', ['vlevo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vlevo'], []]]]], duvod: 'usnul' },
+    ],
+  },
+  '3.2': {
+    reference: [['stale', ['zvedni', 'krok', ['kdyz', 'druh:spaleny', ['krok'], []], 'poloz',
+      'vpravo', 'vpravo', 'krok', ['kdyz', 'cesta:vpred', ['krok'], []], 'vpravo', 'vpravo']]],
+    alternativy: [[['stale', ['zvedni', ['kdyz', 'druh:spaleny',
+      ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo'],
+      ['krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]]]]],
+    chybna: [
+      { program: [['stale', ['zvedni', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]], zprava: /Na výstup patří jen propojky/ },
+      { program: [['stale', ['zvedni', 'krok', ['kdyz', 'druh:spaleny', ['krok'], []], 'poloz',
+        'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'krok', ['kdyz', 'druh:spaleny', ['krok'], []], 'poloz',
+        'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]], duvod: 'usnul' },
+      { program: [['stale', ['zvedni', 'krok', ['kdyz', 'druh:propojka', ['krok'], []], 'poloz',
+        'vpravo', 'vpravo', 'krok', ['kdyz', 'cesta:vpred', ['krok'], []], 'vpravo', 'vpravo']]], zprava: /patří jen/ },
+    ],
+  },
+  '3.3': {
+    // pravá ruka na stěně
+    reference: [['stale', [['kdyz', 'cesta:vpravo', ['vpravo', 'krok'], [['kdyz', 'cesta:vpred', ['krok'], ['vlevo']]]]]]],
+    alternativy: [
+      // levá ruka na stěně
+      [['stale', [['kdyz', 'cesta:vlevo', ['vlevo', 'krok'], [['kdyz', 'cesta:vpred', ['krok'], ['vpravo']]]]]]],
+    ],
+    chybna: [
+      { program: [['stale', [['kdyz', 'cesta:vpred', ['krok'], ['vpravo']]]]], duvod: 'usnul' },
+      { program: [['opakuj', 6, ['krok']]], duvod: 'pad' },
+      { program: [['stale', [['kdyz', 'cesta:vpravo', ['vpravo'], []], 'krok']]], duvod: 'pad' },
+      { program: [['stale', [['kdyz', 'cesta:vpravo', ['vpravo', 'krok'], ['krok']]]]], duvod: 'pad' },
+    ],
+  },
+  '3.4': {
+    reference: [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
+      'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok']], 'vpravo', 'vpravo']]],
+    alternativy: [[['stale', ['zvedni',
+      ['kdyz', 'pruh:hneda', ['krok'], [['kdyz', 'pruh:cervena', ['krok', 'krok'], ['krok', 'krok', 'krok']]]],
+      'poloz', 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo']]]],
+    chybna: [
+      { program: [['stale', ['zvedni', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]], zprava: /patří jen odpory s hnědým/ },
+      { program: [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
+        'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 4, ['krok']], 'vpravo', 'vpravo']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []], 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []],
+        'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok']], 'vpravo', 'vpravo']]], zprava: /patří jen/ },
+      { program: [['stale', ['zvedni',
+        ['kdyz', 'pruh:hneda', ['krok'], [['kdyz', 'pruh:cervena', ['krok', 'krok'], ['krok', 'krok', 'krok']]]],
+        'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]], duvod: 'pad' },
+    ],
+  },
 };
