@@ -342,6 +342,8 @@ def normal(prg):
             out.append({'op': u})
         elif u[0] == 'opakuj':
             out.append({'op': 'opakuj', 'n': u[1], 'telo': normal(u[2])})
+        elif u[0] == 'opakujKdyz':
+            out.append({'op': 'opakujKdyz', 'podminka': u[1], 'telo': normal(u[2])})
         elif u[0] == 'kdyz':
             out.append({'op': 'kdyz', 'podminka': u[1], 'telo': normal(u[2]), 'jinak': normal(u[3])})
         else:
@@ -357,6 +359,12 @@ def sestav(page, prg, klik):
             continue
         klik(f'#paleta .blok[data-op="{u[0]}"]')
         sid = page.get_attribute('#program .hlava.vybrany', 'data-id')
+        if u[0] == 'opakujKdyz':
+            klik(f'#program .hlava[data-id="{sid}"] .podminka-n')
+            klik(f'#program .hlava[data-id="{sid}"] .volba-p [data-p="{u[1]}"]')
+            sestav(page, u[2], klik)
+            klik(f'#program .pata[data-id="{sid}"]')
+            continue
         if u[0] == 'kdyz':
             klik(f'#program .hlava[data-id="{sid}"] .podminka-n')
             klik(f'#program .hlava[data-id="{sid}"] .volba-p [data-p="{u[1]}"]')
@@ -470,7 +478,7 @@ RESENI3 = {
         'vpravo', 'vpravo', 'krok', ['kdyz', 'cesta:vpred', ['krok'], []], 'vpravo', 'vpravo']]],
     '3.3': [['stale', [['kdyz', 'cesta:vpravo', ['vpravo', 'krok'], [['kdyz', 'cesta:vpred', ['krok'], ['vlevo']]]]]]],
     '3.4': [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
-        'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok']], 'vpravo', 'vpravo']]],
+        'krok', 'poloz', 'vpravo', 'vpravo', ['opakujKdyz', 'cesta:vpred', ['krok']], 'vpravo', 'vpravo']]],
 }
 
 ODEMCENO3 = """localStorage.setItem('malycz.plosnak.v1', JSON.stringify({aktualni: '3.1', levely: Object.fromEntries(

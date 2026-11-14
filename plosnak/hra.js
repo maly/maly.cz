@@ -40,6 +40,7 @@
     if (op === 'opakuj') { u.n = 2; u.telo = []; }
     if (op === 'stale') u.telo = [];
     if (op === 'kdyz') { u.podminka = (level.podminky || ['drzim'])[0]; u.telo = []; u.jinak = []; }
+    if (op === 'opakujKdyz') { u.podminka = (level.podminky || ['drzim'])[0]; u.telo = []; }
     return u;
   }
   function ocisti(prg, povolene) {
@@ -995,6 +996,7 @@
     poloz: '<path d="M4 17h12M10 3v10M6 9l4 4 4-4"/>',
     opakuj: '<path d="M4 10a6 6 0 0 1 10-4.5L16 7M16 3v4h-4M16 10a6 6 0 0 1-10 4.5L4 13M4 17v-4h4"/>',
     stale: '<path d="M10 10c-2-3-6-3-6 0s4 3 6 0 6-3 6 0-4 3-6 0"/>',
+    opakujKdyz: '<path d="M4 10a6 6 0 0 1 10-4.5L16 7M16 3v4h-4M10 9l3 3-3 3-3-3z"/>',
     kdyz: '<path d="M10 2 18 10 10 18 2 10Z"/><path d="M8.3 8a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1v.3M10 13.6v.1"/>',
     uloz: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 2v6M7.5 5.5 10 8l2.5-2.5"/>',
     vyndej: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 8V2M7.5 4.5 10 2l2.5 2.5"/>',
@@ -1077,15 +1079,15 @@
       const volba = volbaN === u.id
         ? `<div class="volba-n" role="group" aria-label="Kolikrát">${Array.from({ length: MAX_N - 1 }, (_, i) => i + 2).map(k =>
           `<button type="button" data-n="${k}" aria-pressed="${k === u.n}">${k}</button>`).join('')}</div>` : '';
-      const kdyz = u.op === 'kdyz';
-      const pod = kdyz ? `<button type="button" class="podminka-n" aria-label="Podmínka" aria-expanded="${volbaP === u.id}">${S.PODMINKY[u.podminka]}</button>` : '';
-      const volbaPod = kdyz && volbaP === u.id
+      const kdyz = u.op === 'kdyz', sPodminkou = kdyz || u.op === 'opakujKdyz';
+      const pod = sPodminkou ? `<button type="button" class="podminka-n" aria-label="Podmínka" aria-expanded="${volbaP === u.id}">${S.PODMINKY[u.podminka]}</button>` : '';
+      const volbaPod = sPodminkou && volbaP === u.id
         ? `<div class="volba-p" role="group" aria-label="Podmínka">${(level.podminky || []).map(k =>
           `<button type="button" data-p="${k}" aria-pressed="${k === u.podminka}">${S.PODMINKY[k]}</button>`).join('')}</div>` : '';
       const vyb = d => kurzor && kurzor.id === u.id && kurzor.dovnitr === d ? ' vybrany' : '';
       if (kdyz) li.classList.add('vetveni');
       const hlava = el('div', 'blok hlava b-' + b.druh + vyb('telo'),
-        `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${kdyz ? 'když' : u.op === 'stale' ? 'opakuj stále' : 'opakuj'}</span>${n}${pod}<span class="kolo"></span>${smaz}${volba}${volbaPod}`);
+        `<span class="cislo">${++cislo}</span>${ikona(u.op)}<span class="nazev">${kdyz ? 'když' : u.op === 'stale' ? 'opakuj stále' : u.op === 'opakujKdyz' ? 'opakuj, když' : 'opakuj'}</span>${n}${pod}<span class="kolo"></span>${smaz}${volba}${volbaPod}`);
       hlava.dataset.id = u.id; hlava.tabIndex = 0;
       const telo = el('ol', 'telo');
       if (!u.telo.length) telo.appendChild(el('li', 'prazdne-telo', kdyz ? 'sem patří, co dělat, když platí' : 'sem patří opakované bloky'));

@@ -11,6 +11,7 @@ function prg(zapis) {
   return zapis.map(z => {
     if (typeof z === 'string') return { id: 'u' + ++id, op: z };
     if (z[0] === 'opakuj') return { id: 'u' + ++id, op: 'opakuj', n: z[1], telo: prg(z[2]) };
+    if (z[0] === 'opakujKdyz') return { id: 'u' + ++id, op: 'opakujKdyz', podminka: z[1], telo: prg(z[2]) };
     if (z[0] === 'kdyz') return { id: 'u' + ++id, op: 'kdyz', podminka: z[1], telo: prg(z[2]), jinak: prg(z[3] || []) };
     return { id: 'u' + ++id, op: z[0], telo: prg(z[1]) };
   });
@@ -161,4 +162,15 @@ test('pískoviště: nic se nehodnotí, program doběhne', () => {
   const v = S.spustTest(l, prg(['zvedni', 'krok', 'krok', 'poloz']), 0);
   assert.ok(!v.uspech);
   assert.match(v.zprava, /nehodnotí/);
+});
+
+test('opakuj, když: podmínka se ověří před každým průchodem', () => {
+  const l = S.pripravLevel({ id: 'tk', mapa: ['P####.'], privod: { pocet: [1, 1] }, start: { smer: 'vychod' } });
+  const s = S.novyStav(l, S.zadani(l, 0)), m = S.stroj(prg([['opakujKdyz', 'cesta:vpred', ['krok']], 'vlevo']));
+  while (!s.konec) S.takt(l, s, m);
+  assert.strictEqual(s.x, 4);                       // došel na konec cestičky a nespadl
+  assert.strictEqual(s.takt, 5);
+  const v = S.spustTest(l, prg([['opakujKdyz', 'cesta:vlevo', ['krok']]]), 0);   // neplatí hned: tělo se nevykoná
+  assert.strictEqual(v.takty, 0);
+  assert.strictEqual(S.spustTest(l, prg([['opakujKdyz', 'cesta:vpred', []]]), 0).duvod, 'usnul');
 });

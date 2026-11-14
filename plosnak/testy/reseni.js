@@ -136,7 +136,10 @@ module.exports = {
       'krok', 'poloz', 'vpravo', 'vpravo', ['opakuj', 3, ['krok']], 'vpravo', 'vpravo']]],
     alternativy: [[['stale', ['zvedni',
       ['kdyz', 'pruh:hneda', ['krok'], [['kdyz', 'pruh:cervena', ['krok', 'krok'], ['krok', 'krok', 'krok']]]],
-      'poloz', 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo']]]],
+      'poloz', 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo']]],
+      // návrat s opakuj, když (od kapitoly 3)
+      [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
+        'krok', 'poloz', 'vpravo', 'vpravo', ['opakujKdyz', 'cesta:vpred', ['krok']], 'vpravo', 'vpravo']]]],
     chybna: [
       { program: [['stale', ['zvedni', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]], zprava: /patří jen odpory s hnědým/ },
       { program: [['stale', ['zvedni', 'krok', ['kdyz', 'pruh:hneda', ['poloz'], []], 'krok', ['kdyz', 'pruh:cervena', ['poloz'], []],
@@ -238,6 +241,13 @@ module.exports = {
     reference: [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
       ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
       'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]],
+    alternativy: [
+      // s opakuj, když: dojde rovnou k první volné patici a zpátky podle cesty
+      [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+        ['opakujKdyz', 'patice:osazena', ['krok']],
+        'poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo',
+        ['opakujKdyz', 'cesta:vpred', ['krok']], 'vpravo', 'vpravo', ['opakujKdyz', 'cesta:vpred', ['krok']], 'vpravo', 'krok', 'vpravo']]],
+    ],
     chybna: [
       { program: [['stale', ['zvedni', 'uloz', 'zvedni', 'krok',
         ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],

@@ -35,6 +35,7 @@
     poloz:  { nazev: 'polož', druh: 'ruce' },
     opakuj: { nazev: 'opakuj', druh: 'rizeni', telo: true },
     stale:  { nazev: 'opakuj stále', druh: 'rizeni', telo: true },
+    opakujKdyz: { nazev: 'opakuj, když', druh: 'rizeni', telo: true, podminka: true },
     kdyz:   { nazev: 'když', druh: 'rozhod', telo: true, jinak: true },
     uloz:   { nazev: 'ulož do kapsy', druh: 'kapsa' },
     vyndej: { nazev: 'vyndej z kapsy', druh: 'kapsa' },
@@ -319,13 +320,21 @@
       const ram = m.zasobnik[m.zasobnik.length - 1];
       if (!ram) return null;
       if (ram.i >= ram.seznam.length) {
-        if (ram.uzel && (ram.uzel.op === 'stale' || --ram.zbyva > 0)) { ram.i = 0; ram.kolo = (ram.kolo || 0) + 1; continue; }
+        const dal = ram.uzel && (ram.uzel.op === 'opakujKdyz' ? plati(level, s, ram.uzel.podminka || 'drzim')
+          : ram.uzel.op === 'stale' || --ram.zbyva > 0);
+        if (dal) { ram.i = 0; ram.kolo = (ram.kolo || 0) + 1; continue; }
         m.zasobnik.pop();
         continue;
       }
       const u = ram.seznam[ram.i++];
       const b = BLOKY[u.op];
       if (!b) continue;
+      if (u.op === 'opakujKdyz') {                         // podmínka se ověří před každým průchodem
+        if (!plati(level, s, u.podminka || 'drzim')) continue;
+        if (!(u.telo && u.telo.length)) return { op: '_prazdnaSmycka' };
+        m.zasobnik.push({ seznam: u.telo, i: 0, uzel: u, zbyva: 1 });
+        continue;
+      }
       if (u.op === 'kdyz') {
         const ano = plati(level, s, u.podminka || 'drzim'), vetev = ano ? u.telo : u.jinak;
         if (vetev && vetev.length) m.zasobnik.push({ seznam: vetev, i: 0, uzel: u, zbyva: 1, vetev: ano ? 'telo' : 'jinak' });
@@ -344,8 +353,8 @@
   // Uzly, které právě běží (smyčky a akční blok), pro podsvícení v rozhraní.
   function aktivniUzly(m) {
     return m.zasobnik.filter(r => r.uzel).map(r => r.uzel.op === 'kdyz' ? { id: r.uzel.id, vetev: r.vetev } : ({
-      id: r.uzel.id, n: r.uzel.op === 'stale' ? 0 : r.uzel.n,
-      kolo: r.uzel.op === 'stale' ? (r.kolo || 0) + 1 : r.uzel.n - r.zbyva + 1,
+      id: r.uzel.id, n: r.uzel.op === 'opakuj' ? r.uzel.n : 0,
+      kolo: r.uzel.op === 'opakuj' ? r.uzel.n - r.zbyva + 1 : (r.kolo || 0) + 1,
     }));
   }
 
