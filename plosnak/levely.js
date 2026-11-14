@@ -409,5 +409,33 @@
       cile: { bloky: 26, kroky: 122 },
       testy: { viditelne: 3, skryte: 2 },
     },
+    {
+      id: '5.4',
+      kapitola: 5,
+      kapitolaNazev: 'Páječka',
+      nazev: 'Zkrat',
+      zadani: 'Deska je osazená, ale jeden odpor je spálený a LED nesvítí. Najdi ho, vypájej, nahraď odporem z přívodu, zapájej a spálený kus vyhoď do koše.',
+      napoveda: 'Spálený kus pozná panáček, až ho drží v ruce. Dobré součástky vrať a zase zapájej.',
+      mapa: [
+        '........',
+        '.P#O#O#.',
+        '.K....#.',
+        '.#....O.',
+        '.#O#O##.',
+        '........',
+      ],
+      start: { smer: 'vychod' },
+      privod: { strana: 'sever', poradi: ['odpor'] },
+      vystupy: { K: { strana: 'zapad', prijima: 'druh:spaleny' } },
+      obvod: [
+        { x: 3, y: 1, druh: 'odpor' }, { x: 5, y: 1, druh: 'odpor' }, { x: 6, y: 3, druh: 'led', polarita: 'nahodna' },
+        { x: 4, y: 4, druh: 'odpor' }, { x: 2, y: 4, druh: 'odpor' },
+      ],
+      osazeno: { spaleny: 'odpor' },
+      bloky: ['krok', 'vlevo', 'vpravo', 'skoc', 'zvedni', 'poloz', 'opakuj', 'stale', 'kdyz', 'uloz', 'vyndej', 'prohod', 'pajej', 'vypajej', 'otoc'],
+      podminky: ['drzim', 'druh:led', 'druh:odpor', 'druh:spaleny', 'znacka:obracena', 'patice:volna', 'patice:osazena', 'kapsa:neco', 'cesta:vpred', 'cesta:vlevo', 'cesta:vpravo'],
+      cile: { bloky: 16, kroky: 43 },
+      testy: { viditelne: 3, skryte: 2 },
+    },
   ];
 });

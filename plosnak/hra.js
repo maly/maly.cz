@@ -10,6 +10,7 @@
   const RYCHLOST = { '1': 400, '4': 100, '0': 0 };
   const KROKOVANI = 400;
   const PODRZENI = 300;
+  const MAX_N = 20;              // nejvyšší počet opakování ve výběru
 
   const K = '#101317', TEAL = '#006c86', Y = '#f2b705', W = '#fff', RED = '#d9483b';
   const MASKA = '#2f6b47', MASKA_T = '#245738', MASKA_S = '#3f8159', POTISK = '#e3ece5';
@@ -44,7 +45,7 @@
   function ocisti(prg, povolene) {
     return (Array.isArray(prg) ? prg : []).filter(u => u && povolene.includes(u.op)).map(u => {
       const n = novyUzel(u.op);
-      if (n.n) n.n = Math.max(2, Math.min(9, u.n | 0));
+      if (n.n) n.n = Math.max(2, Math.min(MAX_N, u.n | 0));
       if (n.telo) n.telo = ocisti(u.telo, povolene);
       if (n.jinak) n.jinak = ocisti(u.jinak, povolene);
       if (n.podminka && (level.podminky || []).includes(u.podminka)) n.podminka = u.podminka;
@@ -944,7 +945,7 @@
       const n = u.op === 'opakuj'
         ? `<button type="button" class="pocet-n" aria-label="Počet opakování" aria-expanded="${volbaN === u.id}">${u.n}×</button>` : '';
       const volba = volbaN === u.id
-        ? `<div class="volba-n" role="group" aria-label="Kolikrát">${[2, 3, 4, 5, 6, 7, 8, 9].map(k =>
+        ? `<div class="volba-n" role="group" aria-label="Kolikrát">${Array.from({ length: MAX_N - 1 }, (_, i) => i + 2).map(k =>
           `<button type="button" data-n="${k}" aria-pressed="${k === u.n}">${k}</button>`).join('')}</div>` : '';
       const kdyz = u.op === 'kdyz';
       const pod = kdyz ? `<button type="button" class="podminka-n" aria-label="Podmínka" aria-expanded="${volbaP === u.id}">${S.PODMINKY[u.podminka]}</button>` : '';

@@ -253,4 +253,34 @@ module.exports = {
         'vpravo', 'vpravo', ['opakuj', 8, ['krok']]]]], duvod: 'pad' },
     ],
   },
+  '5.4': {
+    // Obchůzka okruhu: na každé osazené patici vypájej, zvedni, prohlédni; spálený vyměň za dobrý z kapsy.
+    reference: ['zvedni', 'uloz',
+      ['opakuj', 15, [
+        ['kdyz', 'cesta:vpred', ['krok'], ['vpravo', 'krok']],
+        ['kdyz', 'patice:osazena', ['vypajej', 'zvedni', ['kdyz', 'druh:spaleny', ['prohod'], []], 'poloz', 'pajej'], []]]],
+      'vyndej', 'poloz'],
+    chybna: [
+      { program: ['zvedni', 'uloz',
+        ['opakuj', 15, [
+          ['kdyz', 'cesta:vpred', ['krok'], ['vpravo', 'krok']],
+          ['kdyz', 'patice:osazena', ['vypajej', 'zvedni', ['kdyz', 'druh:spaleny', ['prohod'], []], 'poloz'], []]]],
+        'vyndej', 'poloz'], zprava: /není zapájená/ },
+      { program: ['zvedni', 'uloz',
+        ['opakuj', 15, [
+          ['kdyz', 'cesta:vpred', ['krok'], ['vpravo', 'krok']],
+          ['kdyz', 'patice:osazena', ['zvedni', ['kdyz', 'druh:spaleny', ['prohod'], []], 'poloz', 'pajej'], []]]],
+        'vyndej', 'poloz'], zprava: /spálený|koš|kapse/ },
+      { program: ['zvedni', 'uloz',
+        ['opakuj', 15, [
+          ['kdyz', 'cesta:vpred', ['krok'], ['vpravo', 'krok']],
+          ['kdyz', 'patice:osazena', ['vypajej', 'zvedni', ['kdyz', 'druh:spaleny', ['prohod'], []], 'poloz', 'pajej'], []]]]],
+        zprava: /kapse/ },
+      { program: ['zvedni', 'uloz',
+        ['opakuj', 15, [
+          ['kdyz', 'cesta:vpred', ['krok'], ['vlevo', 'krok']],
+          ['kdyz', 'patice:osazena', ['vypajej', 'zvedni', ['kdyz', 'druh:spaleny', ['prohod'], []], 'poloz', 'pajej'], []]]],
+        'vyndej', 'poloz'], duvod: 'pad' },
+    ],
+  },
 };
