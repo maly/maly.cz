@@ -511,7 +511,7 @@
   function paticePotreba(level, s, o) { return o.skupina == null || o.skupina < s.skupin; }
   function chybyObvodu(level, s) {
     const out = [];
-    for (const o of level.obvod) {
+    for (const o of Object.values(level.obvodMapa)) {
       const k = o.x + ',' + o.y, p = s.podlaha[k], jm = 'Patice ' + (o.poradi + 1) + ' (' + (o.druh === 'led' ? 'LED' : 'odpor') + ')';
       if (!paticePotreba(level, s, o)) { if (p) out.push(jm + ' měla zůstat prázdná.'); continue; }
       if (!p) { out.push(jm + ' není osazená.'); continue; }

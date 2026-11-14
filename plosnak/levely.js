@@ -388,5 +388,26 @@
       cile: { bloky: 16, kroky: 15 },
       testy: { viditelne: 3, skryte: 2 },
     },
+    {
+      id: '5.3',
+      kapitola: 5,
+      kapitolaNazev: 'Páječka',
+      nazev: 'Řada světel',
+      zadani: 'Rozsviť 2 až 6 světel, zleva bez mezer. Každé potřebuje LED nahoře a odpor pod ní. Přívod vydává dvojice LED a odpor v náhodném pořadí.',
+      napoveda: 'Kapsa poslouží jako odkladiště. Cesta kolem obou řad je pokaždé stejně dlouhá.',
+      mapa: [
+        '........',
+        'POOOOOO#',
+        '#OOOOOO#',
+        '........',
+      ],
+      start: { smer: 'vychod' },
+      privod: { strana: 'sever', pary: ['led', 'odpor'], pocet: [2, 6] },
+      obvod: [{ x: 1, y: 1, druh: 'led', skupina: 0 }, { x: 2, y: 1, druh: 'led', skupina: 1 }, { x: 3, y: 1, druh: 'led', skupina: 2 }, { x: 4, y: 1, druh: 'led', skupina: 3 }, { x: 5, y: 1, druh: 'led', skupina: 4 }, { x: 6, y: 1, druh: 'led', skupina: 5 }, { x: 1, y: 2, druh: 'odpor', skupina: 0 }, { x: 2, y: 2, druh: 'odpor', skupina: 1 }, { x: 3, y: 2, druh: 'odpor', skupina: 2 }, { x: 4, y: 2, druh: 'odpor', skupina: 3 }, { x: 5, y: 2, druh: 'odpor', skupina: 4 }, { x: 6, y: 2, druh: 'odpor', skupina: 5 }],
+      bloky: ['krok', 'vlevo', 'vpravo', 'skoc', 'zvedni', 'poloz', 'opakuj', 'stale', 'kdyz', 'uloz', 'vyndej', 'prohod', 'pajej', 'vypajej', 'otoc'],
+      podminky: ['drzim', 'druh:led', 'druh:odpor', 'druh:spaleny', 'znacka:obracena', 'patice:volna', 'patice:osazena', 'kapsa:neco', 'cesta:vpred', 'cesta:vlevo', 'cesta:vpravo'],
+      cile: { bloky: 26, kroky: 122 },
+      testy: { viditelne: 3, skryte: 2 },
+    },
   ];
 });

@@ -629,6 +629,9 @@ RESENI5 = {
     '5.1': ['zvedni', 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo', 'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
     '5.2': ['zvedni', 'krok', ['kdyz', 'znacka:obracena', ['otoc'], []], 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo',
             'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
+    '5.3': [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+      ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
+      'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]],
 }
 
 

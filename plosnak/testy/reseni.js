@@ -233,4 +233,24 @@ module.exports = {
         'zvedni', 'krok', 'krok', 'poloz', 'pajej'], zprava: /obráceně/ },
     ],
   },
+  '5.3': {
+    // Po položení LED hned dolů pod ni s odporem; dál se jde po řadě odporů s prázdnou rukou.
+    reference: [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+      ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
+      'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]],
+    chybna: [
+      { program: [['stale', ['zvedni', 'uloz', 'zvedni', 'krok',
+        ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
+        'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]], zprava: /je v ní/ },
+      { program: [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+        ['opakuj', 6, [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []], 'krok']],
+        'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+        ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
+        'vpravo', 'vpravo', ['opakuj', 7, ['krok']], 'vpravo', 'krok', 'vpravo']]], duvod: 'pad' },
+      { program: [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok',
+        ['opakuj', 6, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], 'krok']],
+        'vpravo', 'vpravo', ['opakuj', 8, ['krok']]]]], duvod: 'pad' },
+    ],
+  },
 };
