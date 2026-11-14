@@ -541,7 +541,92 @@ def kapitola3_mobil(p):
     ctx.close(); b.close()
 
 
+def odemceno_do(aktualni, splnene):
+    return f"""localStorage.setItem('malycz.plosnak.v1', JSON.stringify({{aktualni: '{aktualni}', levely: Object.fromEntries(
+      {splnene!r}.map(id => [id, {{splneno: true}}]))}}))"""
+
+
+KAP1_3 = ['1.1', '1.2', '1.3', '1.4', '2.1', '2.2', '2.3', '2.4', '3.1', '3.2', '3.3', '3.4']
+
+
+def kapitola(p, nazev, reseni, splnene, kontrola=None):
+    """Projde levely kapitoly: složí řešení přes rozhraní, ověří úspěch a postup na další level."""
+    print(f'Chromium desktop: {nazev}')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 900})
+    ids = list(reseni)
+    page.evaluate(odemceno_do(ids[0], splnene))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    for i, (lid, prg) in enumerate(reseni.items()):
+        over(page.evaluate('Plosnak.level') == lid, f'načten level {lid}')
+        sestav(page, prg, page.click)
+        over(page.evaluate('Plosnak.program') == normal(prg), f'{lid}: program složený přes rozhraní')
+        if kontrola:
+            kontrola(page, lid)
+        page.click('#rychlost [data-r="4"]')
+        page.click('#spust')
+        page.wait_for_timeout(1300)
+        page.screenshot(path=f'{SNIMKY}/k-{lid}-beh.png')
+        page.click('#rychlost [data-r="0"]')
+        pockej_konec(page, 20000)
+        over(page.evaluate('Plosnak.beh.konec.uspech'), f'{lid}: referenční řešení uspěje')
+        page.wait_for_selector('#vysledek:not([hidden])', timeout=3000)
+        if i < len(ids) - 1:
+            page.click('[data-akce="dalsi"]')
+    ctx.close(); b.close()
+
+
+def kapitola_mobil(p, lid, prg, splnene):
+    print(f'Chromium mobil 390: {lid} dotykem')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 390, 'height': 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page.evaluate(odemceno_do(lid, splnene))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    over(page.evaluate('Plosnak.level') == lid, f'mobil: otevřen {lid}')
+    cdp = ctx.new_cdp_session(page)
+    sestav(page, prg, lambda sel: tukni(cdp, page, sel))
+    over(page.evaluate('Plosnak.program') == normal(prg), f'mobil {lid}: program ťukáním')
+    sirka = page.evaluate('document.documentElement.scrollWidth')
+    over(sirka <= 390, f'mobil {lid}: bez vodorovného posuvníku ({sirka} px)')
+    page.evaluate('window.scrollTo(0, 0)')
+    tukni(cdp, page, '#rychlost [data-r="4"]')
+    tukni(cdp, page, '#spust')
+    page.wait_for_timeout(1200)
+    page.evaluate('window.scrollTo(0, 0)')
+    page.screenshot(path=f'{SNIMKY}/m-{lid}-beh.png', full_page=True)
+    tukni(cdp, page, '#rychlost [data-r="0"]')
+    pockej_konec(page, 20000)
+    over(page.evaluate('Plosnak.beh.konec.uspech'), f'mobil {lid}: uspěje')
+    ctx.close(); b.close()
+
+
+RESENI4 = {
+    '4.1': [['stale', ['zvedni', 'uloz', 'zvedni', 'krok', 'krok', 'poloz', 'vyndej', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]],
+    '4.2': [['stale', ['zvedni', ['kdyz', 'kapsa:stejna',
+        ['krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo'],
+        ['prohod', 'vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok']]]]],
+    '4.3': [['stale', ['zvedni', 'uloz',
+        ['opakuj', 2, ['zvedni', ['kdyz', 'kapsa:vetsi', ['prohod'], []], 'vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok']],
+        'vyndej', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo']]],
+    '4.4': [['stale', ['zvedni', 'uloz', 'zvedni', ['kdyz', 'kapsa:vetsi', ['prohod'], []],
+        'krok', 'krok', 'poloz', 'vyndej', 'poloz', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo']]],
+}
+
+
+def kontrola4(page, lid):
+    if lid != '4.1':
+        return
+    over(page.locator('#legenda').is_visible(), '4.1: legenda barev pod zadáním')
+    for _ in range(3):
+        page.click('#krok'); page.wait_for_timeout(450)
+    over('v kapse' in page.inner_text('#stav'), '4.1: stavový řádek ukazuje kapsu')
+    page.screenshot(path=f'{SNIMKY}/k-4.1-kapsa.png')
+    page.click('#zastav')
+
+
 with sync_playwright() as p:
+    kapitola(p, 'kapitola 4', RESENI4, KAP1_3, kontrola4)
+    kapitola_mobil(p, '4.4', RESENI4['4.4'], KAP1_3 + ['4.1', '4.2', '4.3'])
     kapitola3(p)
     kapitola3_mobil(p)
     kapitola2(p)

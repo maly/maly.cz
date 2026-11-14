@@ -225,7 +225,10 @@
 
   // ---------- součástky ----------
 
-  const PRUHY = { hneda: '#7b4b2a', cervena: '#d0312d', oranzova: '#f08a12' };
+  const PRUHY = {
+    hneda: '#7b4b2a', cervena: '#d0312d', oranzova: '#f08a12', zluta: '#f4d21c', zelena: '#2e9e45',
+    modra: '#2f6fd1', fialova: '#8e44ad', seda: '#8d959c', bila: '#f7f7f7',
+  };
   function kresliPolozku(c, pol, x, y, s = 1, uhel = 0) {
     if (!pol) return;
     const druh = typeof pol === 'string' ? pol : pol.druh;
@@ -399,7 +402,20 @@
       const cil = [{ x: o.ruceCil.x - .45 * u, y: o.ruceCil.y }, { x: o.ruceCil.x + .45 * u, y: o.ruceCil.y }];
       ruce = ruce.map((p, i) => lerpP(p, cil[i], o.ruceK));
     }
+    // kapsa na boku (od kapitoly 4); při pohledu zboku je za zády
+    const kp = { x: x + (bok ? -sx * 1.15 * u : 1.55 * u), y: hip.y + .25 * u };
+    if (o.kapsaK) ruce = ruce.map((p, i) => lerpP(p, { x: kp.x + (i ? .3 : -.3) * u, y: kp.y - .2 * u }, o.kapsaK));
+    const kreslitKapsu = () => {
+      if (!o.sKapsou) return;
+      if (o.kapsa) kresliPolozku(c, o.kapsa, kp.x, kp.y - .7 * u, .55, -.5);
+      c.fillStyle = '#b5884f'; c.lineWidth = lw * .8;
+      zaoblene(c, kp.x - .85 * u, kp.y - .55 * u, 1.7 * u, 1.35 * u, .35 * u); c.fill(); c.stroke();
+      c.beginPath(); c.moveTo(kp.x - .85 * u, kp.y - .1 * u); c.lineTo(kp.x + .85 * u, kp.y - .1 * u); c.stroke();
+      c.lineWidth = lw;
+    };
+    if (bok) kreslitKapsu();
     ruce.forEach((h, i) => oblouk(sh, h, (i ? 1 : -1) * .7 * u, .2 * u));
+    if (!bok) kreslitKapsu();
     // kšilt za hlavou (pohled zezadu)
     const ksiltZezadu = () => {
       c.fillStyle = TEAL; c.beginPath(); c.ellipse(hc.x, hc.y - r * .98, r * .78, r * .3, 0, 0, TAU); c.fill(); c.stroke();
@@ -519,7 +535,7 @@
         const c = stred(st.x, st.y);
         return { visi: { x: c.x - dx * .64 * T, y: c.y - dy * .64 * T }, smer: st.smer };
       }
-      Object.assign(o, { polozka: st.drzi, nahoru: st.drzi ? 1 : 0 });
+      Object.assign(o, { polozka: st.drzi, nahoru: st.drzi ? 1 : 0, kapsa: st.kapsa, sKapsou: sKapsou() });
       if (vis.poza === 'jasa') { o.nahoru = 1; o.vyskok = Math.abs(Math.sin(now / 160)) * .2 * T; o.dech = false; }
       if (vis.poza === 'krci' || vis.poza === 'spi') o.poza = vis.poza;
       const z = zem(st.x, st.y);
@@ -528,6 +544,7 @@
     const z = ev.z, na = ev.na || z, [dx, dy] = S.SMERY[z.smer];
     let pos = zem(z.x, z.y), smer = z.smer;
     o.polozka = vis.pred.drzi; o.nahoru = vis.pred.drzi ? 1 : 0; o.dech = false;
+    o.sKapsou = sKapsou(); o.kapsa = p < .5 ? vis.pred.kapsa : vis.po.kapsa;
     let cil = { x: na.x + S.SMERY[na.smer][0], y: na.y + S.SMERY[na.smer][1] };
     switch (ev.typ) {
       case 'krok': pos = lerpP(zem(z.x, z.y), zem(na.x, na.y), ease(p)); o.faze = p; break;
@@ -569,7 +586,16 @@
         if (ev.typ === 'prazdnaRuka') o.nahoru = 0;
         break;
       }
-      case 'plnaRuka': pos = { x: pos.x + Math.sin(p * TAU * 3) * .03 * T, y: pos.y }; break;
+      case 'plnaRuka': case 'plnaKapsa': case 'prazdnaKapsa':
+        pos = { x: pos.x + Math.sin(p * TAU * 3) * .03 * T, y: pos.y }; break;
+      case 'doKapsy': case 'zKapsy': case 'prohod': {
+        // ruce s věcí dolů ke kapse, výměna v polovině, zpátky nahoru
+        const k = Math.sin(p * Math.PI);
+        o.kapsaK = k;
+        o.polozka = p < .5 ? vis.pred.drzi : vis.po.drzi;
+        o.nahoru = (p < .5 ? vis.pred.drzi : vis.po.drzi) ? 1 : 0;
+        break;
+      }
     }
     return { x: pos.x, y: pos.y, smer, o, cil };
   }
@@ -598,7 +624,11 @@
 
   // ---------- běh programu ----------
 
-  const BUBLINY = { naraz: 'Au!', hmat: 'Nic tu není.', plnaRuka: 'Mám plné ruce.', prazdnaRuka: 'Nic nedržím.', rozsyp: 'Jejda!', pad: 'Áááá!' };
+  const BUBLINY = {
+    naraz: 'Au!', hmat: 'Nic tu není.', plnaRuka: 'Mám plné ruce.', prazdnaRuka: 'Nic nedržím.', rozsyp: 'Jejda!', pad: 'Áááá!',
+    plnaKapsa: 'Kapsa je plná.', prazdnaKapsa: 'Kapsa je prázdná.',
+  };
+  const sKapsou = () => (level.bloky || []).includes('uloz');
 
   function bublina(text, ms) { vis.bublina = { text, do: performance.now() + (ms || 1500) }; }
 
@@ -761,6 +791,9 @@
     opakuj: '<path d="M4 10a6 6 0 0 1 10-4.5L16 7M16 3v4h-4M16 10a6 6 0 0 1-10 4.5L4 13M4 17v-4h4"/>',
     stale: '<path d="M10 10c-2-3-6-3-6 0s4 3 6 0 6-3 6 0-4 3-6 0"/>',
     kdyz: '<path d="M10 2 18 10 10 18 2 10Z"/><path d="M8.3 8a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1v.3M10 13.6v.1"/>',
+    uloz: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 2v6M7.5 5.5 10 8l2.5-2.5"/>',
+    vyndej: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 8V2M7.5 4.5 10 2l2.5 2.5"/>',
+    prohod: '<path d="M4 7h11M12 4l3 3-3 3M16 13H5M8 10l-3 3 3 3"/>',
   };
   const ikona = op => `<svg class="ikona" viewBox="0 0 20 20" aria-hidden="true">${IKONY[op] || ''}</svg>`;
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -772,6 +805,10 @@
     $('#lv-napoveda').textContent = level.napoveda || '';
     $('#lv-napoveda').hidden = !level.napoveda;
     const z = data.levely[level.id], n = z && z.nejlepsi;
+    const lg = $('#legenda');
+    lg.hidden = !level.legenda;
+    lg.innerHTML = level.legenda ? '<span class="lg-titul">První pruh</span>' + S.PRUHY.map((k, i) =>
+      `<span class="lg"><i style="background:${PRUHY[k]}"></i>${i + 1}</span>`).join('') : '';
     $('#lv-cile').innerHTML =
       `<span class="cip">Cíl: nejvýš ${bloku(level.cile.bloky)}</span><span class="cip">v průměru nejvýš ${kroku(level.cile.kroky)}</span>` +
       (n ? `<span class="cip nej">Nejlepší: ${bloku(n.bloky)}, ${kroku(n.kroky)}</span>` : '');
@@ -911,6 +948,7 @@
   }
 
   function drzenoText(p) {
+    if (p.druh === 'odpor' && p.pruh && level.legenda) return 'odpor ' + S.hodnota(p) + ' (' + S.BARVY[p.pruh] + ')';
     if (p.druh === 'odpor' && p.pruh) return 'odpor, první pruh ' + S.BARVY[p.pruh];
     return { propojka: 'propojku', spaleny: 'spálený kus' }[p.druh] || S.nazevDruhu(p.druh, 1);
   }
@@ -919,7 +957,7 @@
     const e = $('#stav');
     if (text == null) {
       const st = beh ? (vis.ev ? vis.po : vis.stav) : null;
-      text = st ? `Takt ${st.takt}` + (st.drzi ? ' · drží ' + drzenoText(st.drzi) : '') : 'Připraven.';
+      text = st ? `Takt ${st.takt}` + (st.drzi ? ' · drží ' + drzenoText(st.drzi) : '') + (st.kapsa ? ' · v kapse ' + drzenoText(st.kapsa) : '') : 'Připraven.';
       druh = '';
     }
     e.textContent = text; e.className = 'stav' + (druh ? ' ' + druh : '');

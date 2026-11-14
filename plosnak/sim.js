@@ -36,6 +36,9 @@
     opakuj: { nazev: 'opakuj', druh: 'rizeni', telo: true },
     stale:  { nazev: 'opakuj stále', druh: 'rizeni', telo: true },
     kdyz:   { nazev: 'když', druh: 'rozhod', telo: true, jinak: true },
+    uloz:   { nazev: 'ulož do kapsy', druh: 'kapsa' },
+    vyndej: { nazev: 'vyndej z kapsy', druh: 'kapsa' },
+    prohod: { nazev: 'prohoď', druh: 'kapsa' },
   };
 
   // Podmínky bloku když; stejné klíče slouží i jako pravidla výstupů (prijima).
@@ -51,8 +54,17 @@
     'pruh:hneda': 'první pruh je hnědý',
     'pruh:cervena': 'první pruh je červený',
     'pruh:oranzova': 'první pruh je oranžový',
+    'kapsa:vetsi': 'držená je větší než v kapse',
+    'kapsa:mensi': 'držená je menší než v kapse',
+    'kapsa:stejna': 'držená je stejná jako v kapse',
+    'kapsa:neco': 'v kapse něco je',
   };
-  const BARVY = { hneda: 'hnědý', cervena: 'červený', oranzova: 'oranžový' };
+  // Barevný kód odporu: první pruh = číslice 1 až 9.
+  const PRUHY = ['hneda', 'cervena', 'oranzova', 'zluta', 'zelena', 'modra', 'fialova', 'seda', 'bila'];
+  const BARVY = { hneda: 'hnědý', cervena: 'červený', oranzova: 'oranžový', zluta: 'žlutý', zelena: 'zelený', modra: 'modrý', fialova: 'fialový', seda: 'šedý', bila: 'bílý' };
+  const BARVY7 = { hneda: 'hnědým', cervena: 'červeným', oranzova: 'oranžovým', zluta: 'žlutým', zelena: 'zeleným', modra: 'modrým', fialova: 'fialovým', seda: 'šedým', bila: 'bílým' };
+  const hodnota = p => p && p.druh === 'odpor' ? PRUHY.indexOf(p.pruh) + 1 : 0;
+  const stejne = (a, b) => !!a && !!b && a.druh === b.druh && (a.druh !== 'odpor' || a.pruh === b.pruh);
 
   const DRUHY = {
     propojka:    { jednotne: 'propojka', mnozne: 'propojky' },
@@ -158,6 +170,13 @@
       return jeCesta(bunka(level, s.x + dx, s.y + dy));
     }
     if (typ === 'drzim') return !!s.drzi;
+    if (typ === 'kapsa') {
+      if (h === 'neco') return !!s.kapsa;
+      if (!s.drzi || !s.kapsa) return false;
+      if (h === 'stejna') return stejne(s.drzi, s.kapsa);
+      if (s.drzi.druh !== 'odpor' || s.kapsa.druh !== 'odpor') return false;
+      return h === 'vetsi' ? hodnota(s.drzi) > hodnota(s.kapsa) : hodnota(s.drzi) < hodnota(s.kapsa);
+    }
     return splnuje(s.drzi, k);
   }
   function splnuje(polozka, k) {
@@ -174,10 +193,11 @@
     let id = 0;
     const generuj = p => {
       const [od, do_] = p.pocet || [1, 1];
-      const n = od + Math.floor(r() * (do_ - od + 1));
+      const n = (od + Math.floor(r() * (do_ - od + 1))) * (p.skupina || 1);   // pocet = počet skupin, je-li skupina
       const druhy = Array.isArray(p.druh) ? p.druh : [p.druh || 'propojka'];
       const out = [];
       for (let k = 0; k < n; k++) {
+        if (k && p.opakovani && r() < p.opakovani) { out.push(Object.assign({}, out[k - 1], { id: id++ })); continue; }
         const pol = { id: id++, druh: druhy[Math.floor(r() * druhy.length)] };
         if (pol.druh === 'odpor') { const pr = p.pruh || ['hneda', 'cervena', 'oranzova']; pol.pruh = pr[Math.floor(r() * pr.length)]; }
         out.push(pol);
@@ -197,6 +217,8 @@
     return {
       x: s.x, y: s.y, smer: s.smer,
       drzi: null,
+      kapsa: null,
+      zadano: zad.privod.map(p => Object.assign({}, p)),
       privod: zad.privod.map(p => Object.assign({}, p)),
       celkem: zad.privod.length + zad.podlaha.length,
       vystup: [],
@@ -209,7 +231,7 @@
 
   function snimek(s) {
     return {
-      x: s.x, y: s.y, smer: s.smer, drzi: s.drzi, takt: s.takt, konec: s.konec,
+      x: s.x, y: s.y, smer: s.smer, drzi: s.drzi, kapsa: s.kapsa, takt: s.takt, konec: s.konec,
       privod: s.privod.slice(), vystup: s.vystup.slice(), celkem: s.celkem,
       podlaha: Object.assign({}, s.podlaha), rozsypano: s.rozsypano.slice(),
     };
@@ -333,6 +355,22 @@
         s.podlaha[k] = s.drzi; s.drzi = null; ev.typ = 'poloz'; ev.kam = 'podlaha';
         break;
       }
+      case 'uloz':
+        if (!s.drzi) { ev.typ = 'prazdnaRuka'; break; }
+        if (s.kapsa) { ev.typ = 'plnaKapsa'; break; }
+        s.kapsa = s.drzi; s.drzi = null; ev.typ = 'doKapsy'; ev.polozka = s.kapsa;
+        break;
+      case 'vyndej':
+        if (!s.kapsa) { ev.typ = 'prazdnaKapsa'; break; }
+        if (s.drzi) { ev.typ = 'plnaRuka'; break; }
+        s.drzi = s.kapsa; s.kapsa = null; ev.typ = 'zKapsy'; ev.polozka = s.drzi;
+        break;
+      case 'prohod': {
+        if (!s.drzi && !s.kapsa) { ev.typ = 'prazdnaKapsa'; break; }
+        const d = s.drzi; s.drzi = s.kapsa; s.kapsa = d;
+        ev.typ = 'prohod'; ev.doKapsy = s.kapsa; ev.zKapsy = s.drzi;
+        break;
+      }
       default: ev.typ = 'nic';
     }
     if (!s.konec && s.takt >= MAX_TAKTU) { s.konec = { duvod: 'usnul', uspech: false }; ev.usnul = true; }
@@ -353,6 +391,7 @@
     if (level.kontrola === 'dojdi') return { duvod, uspech: false, zprava: 'Nedošel k výstupu.' };
     if (s.rozsypano.length) chyby.push('Rozsypal součástky.');
     if (s.drzi) chyby.push('Směna skončila a panáček pořád drží ' + (s.drzi.druh === 'led' ? 'LED' : nazevDruhu(s.drzi.druh, 1).replace(/a$/, 'u')) + '.');
+    if (s.kapsa && !level.kapsaSmiZustat) chyby.push('Směna skončila a v kapse zůstal' + (s.kapsa.druh === 'odpor' || s.kapsa.druh === 'spaleny' ? ' ' : 'a ') + nazevPolozky(s.kapsa) + '.');
     const lezi = Object.keys(s.podlaha).map(k => k.split(',').map(Number));
     const naPasce = lezi.filter(([x, y]) => bunka(level, x, y) === 'R').length;
     const vPaticich = lezi.filter(([x, y]) => bunka(level, x, y) === 'O').length;
@@ -374,18 +413,38 @@
         break;
       }
     }
+    if (level.poradi && !chyby.length) {                  // na výstupu V záleží na pořadí
+      const cil = OCEKAVANI[level.poradi](s.zadano), maV = s.vystup.filter(p => p.kam === 'V');
+      for (let i = 0; i < cil.length && !chyby.length; i++) {
+        if (!maV[i]) chyby.push('Na výstupu chybí ' + (cil.length - maV.length === 1 ? 'jedna součástka' : soucastky(cil.length - maV.length)) + ': je tam ' + maV.length + ' z ' + cil.length + '.');
+        else if (!stejne(maV[i], cil[i])) chyby.push('Na výstupu je na ' + (i + 1) + '. místě ' + nazevPolozky(maV[i]) + ', ale patří tam ' + nazevPolozky(cil[i]) + '.');
+      }
+      if (!chyby.length && maV.length > cil.length) chyby.push('Na výstupu je o ' + soucastky(maV.length - cil.length) + ' víc, než má být.');
+      const zbyva = s.celkem - s.vystup.length - (s.kapsa && level.kapsaSmiZustat ? 1 : 0);
+      if (!chyby.length && zbyva) chyby.push('Nedoručen' + (zbyva === 1 ? 'a zůstala ' : 'é zůstaly ') + soucastky(zbyva) + '.');
+      return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
+    }
     if (!chyby.length && s.vystup.length !== s.celkem) chyby.push('Na výstupu je ' + s.vystup.length + ' z ' + s.celkem + '.');
     return chyby.length ? { duvod, uspech: false, zprava: chyby[0] } : { duvod, uspech: true };
   }
 
+  // Co má skončit na výstupu V, v tomto pořadí, podle toho, co přívod vydal.
+  const skupiny = (a, n) => { const o = []; for (let i = 0; i + n <= a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+  const OCEKAVANI = {
+    'obrat-dvojice': z => skupiny(z, 2).flatMap(([a, b]) => [b, a]),
+    'serad-dvojice': z => skupiny(z, 2).flatMap(([a, b]) => hodnota(b) < hodnota(a) ? [b, a] : [a, b]),
+    'max-z-trojice': z => skupiny(z, 3).map(t => t.reduce((m, p) => hodnota(p) > hodnota(m) ? p : m)),
+    'dvojcata': z => z.filter((p, i) => i && stejne(p, z[i - 1])),
+  };
+
   function popisPravidla(k) {
     const [typ, h] = k.split(':');
     if (typ === 'druh') return { propojka: 'jen propojky', odpor: 'jen odpory', led: 'jen LED', spaleny: 'jen spálené kusy' }[h];
-    if (typ === 'pruh') return 'jen odpory s ' + { hneda: 'hnědým', cervena: 'červeným', oranzova: 'oranžovým' }[h] + ' prvním pruhem';
+    if (typ === 'pruh') return 'jen odpory s ' + BARVY7[h] + ' prvním pruhem';
     return 'cokoli';
   }
   function nazevPolozky(p) {
-    if (p.druh === 'odpor' && p.pruh) return 'odpor s ' + { hneda: 'hnědým', cervena: 'červeným', oranzova: 'oranžovým' }[p.pruh] + ' pruhem';
+    if (p.druh === 'odpor' && p.pruh) return 'odpor ' + hodnota(p) + ' (s ' + BARVY7[p.pruh] + ' pruhem)';
     return nazevDruhu(p.druh, 1);
   }
 
@@ -417,7 +476,7 @@
   }
 
   return {
-    SMERY, SMER, STRANY, BLOKY, PODMINKY, BARVY, instance, plati, splnuje, vystupNa, generujBludiste, DRUHY, MAX_TAKTU,
+    SMERY, SMER, STRANY, BLOKY, PODMINKY, BARVY, PRUHY, hodnota, stejne, nazevPolozky, OCEKAVANI, instance, plati, splnuje, vystupNa, generujBludiste, DRUHY, MAX_TAKTU,
     nahoda, hashText, pripravLevel, bunka, jeCesta, zadani,
     novyStav, snimek, stroj, takt, spustTest, vyhodnotReseni, pocetBloku, nazevDruhu, ZPRAVY,
   };

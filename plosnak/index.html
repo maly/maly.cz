@@ -11,7 +11,7 @@
     :root {
       --bg: #f7f8fa; --paper: #fff; --text: #101317; --muted: #5f6872; --soft: #d8dde3;
       --hard: #101317; --accent: #006c86; --y: #f2b705; --red: #d9483b;
-      --pohyb: #d3ebf1; --ruce: #fde4a0; --rizeni: #e6dcf6; --rozhod: #fbd6c4;
+      --pohyb: #d3ebf1; --ruce: #fde4a0; --rizeni: #e6dcf6; --rozhod: #fbd6c4; --kapsa: #ecd9bd;
       --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
     * { box-sizing: border-box; }
@@ -129,6 +129,12 @@
     .b-ruce { background: var(--ruce); }
     .b-rizeni { background: var(--rizeni); }
     .b-rozhod { background: var(--rozhod); }
+    .b-kapsa { background: var(--kapsa); }
+    .legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 10px; font: 700 12px/1 var(--mono); }
+    .legenda[hidden] { display: none; }
+    .lg-titul { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; }
+    .lg { display: inline-flex; align-items: center; gap: 3px; }
+    .lg i { width: 12px; height: 16px; border: 1px solid var(--hard); display: inline-block; }
     .smycka.vetveni { background: var(--rozhod); }
     .smycka > .hlava { flex-wrap: wrap; row-gap: 4px; padding-top: 5px; padding-bottom: 5px; }
     .jinak-hlava { padding: 4px 10px 4px 32px; font: 800 12px/1.2 var(--mono); letter-spacing: .06em; cursor: pointer; }
@@ -222,6 +228,7 @@
       <p id="lv-text"></p>
       <p class="napoveda" id="lv-napoveda"></p>
       <div class="cile" id="lv-cile"></div>
+      <div class="legenda" id="legenda" hidden aria-label="Barevný kód odporů"></div>
     </section>
 
     <section class="deska" aria-label="Deska">
