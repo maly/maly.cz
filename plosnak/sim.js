@@ -41,7 +41,7 @@
     prohod: { nazev: 'prohoď', druh: 'kapsa' },
     pajej:  { nazev: 'pájej', druh: 'pajka' },
     vypajej: { nazev: 'vypájej', druh: 'pajka' },
-    otoc:   { nazev: 'otoč součástku', druh: 'pajka' },
+    otoc:   { nazev: 'otoč součástku v ruce', druh: 'pajka' },
     hvizdni: { nazev: 'hvízdni', druh: 'signal' },
     cekej:  { nazev: 'čekej na hvízdnutí', druh: 'signal' },
   };
