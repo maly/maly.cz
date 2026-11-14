@@ -294,4 +294,17 @@ module.exports = {
       { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo']]]], zprava: /přívodu/ },
     ],
   },
+  '6.2': {
+    reference: [[['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]],
+    chybna: [
+      // první nevyhazuje spálené kusy, posílá všechno dál
+      { program: [[['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]], zprava: /spálený|není osazená|měla zůstat|je v ní/ },
+      // první hvízdne ještě na odkládacím místě, druhý do něj narazí
+      { program: [[['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'hvizdni', 'vpravo', 'vpravo', 'krok', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]], zprava: /./ },
+      // první nečeká a pokládá na obsazené místo
+      { program: [[['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]], zprava: /./ },
+      // druhý nepájí
+      { program: [[['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]], zprava: /není zapájená/ },
+    ],
+  },
 };

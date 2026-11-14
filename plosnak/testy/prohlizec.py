@@ -654,6 +654,7 @@ KAP1_5 = KAP1_4 + ['5.1', '5.2', '5.3', '5.4']
 RESENI6 = {
     '6.1': ([['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]],
             [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]),
+    '6.2': ([['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]),
 }
 
 

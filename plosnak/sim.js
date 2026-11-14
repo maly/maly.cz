@@ -218,6 +218,14 @@
         return pol;
       };
       if (p.poradi) return p.poradi.map(novy);                // pevné pořadí
+      if (p.slozeni) {                                       // daný počet kusů každého druhu, zamíchaný
+        for (const [druh, [a, b]] of Object.entries(p.slozeni)) {
+          const m = a + Math.floor(r() * (b - a + 1));
+          for (let k = 0; k < m; k++) out.push(novy(druh));
+        }
+        for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+        return out;
+      }
       if (p.pary) {                                          // skupiny v náhodném pořadí uvnitř skupiny
         const skup = od + Math.floor(r() * (do_ - od + 1));
         for (let k = 0; k < skup; k++) {
@@ -253,7 +261,8 @@
         predem.push({ x: o.x, y: o.y, polozka: pol }); cin.push(o.x + ',' + o.y);
       }
     }
-    const skupin = (level.privod || {}).pary ? privod.length / level.privod.pary.length : 0;
+    const skupin = (level.privod || {}).pary ? privod.length / level.privod.pary.length
+      : level.skupinZ === 'dobre' ? privod.filter(p => p.druh !== 'spaleny').length : 0;
     const podlaha = (level.podlaha || []).map(p => ({ x: p.x, y: p.y, polozka: { id: id++, druh: p.druh || 'propojka' } }));
     if (level.paska) generuj(level.paska).forEach((p, i) => podlaha.push({ x: level.paska_[i].x, y: level.paska_[i].y, polozka: p }));
     return { privod, podlaha: podlaha.concat(predem), znacky, cin, skupin };
