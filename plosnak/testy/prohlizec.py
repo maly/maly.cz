@@ -97,6 +97,10 @@ def desktop(p):
     page.wait_for_timeout(600)
     over(page.evaluate('Plosnak.vis.poza') == 'visi', 'pád: panáček visí')
     over('Spadl' in page.inner_text('#stav'), 'pád: stavový řádek')
+    for _ in range(2):                               # třetí pád za sebou: panáček ukáže na blok
+        page.click('#rychlost [data-r="0"]'); page.click('#spust'); pockej_konec(page)
+    over(page.locator('#program .blok.podezrely').count() == 1 and 'ukazuje na blok č. 5' in page.inner_text('#stav'), 'po třetím pádu ukáže na blok')
+    page.click('#rychlost [data-r="1"]')
     page.screenshot(path=f'{SNIMKY}/d-05-pad.png')
 
     # chybný program: drží součástku na konci

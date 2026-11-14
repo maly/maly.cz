@@ -510,6 +510,23 @@
       const m = lerpP(ruce[0], ruce[1], .5);
       kresliPolozku(c, o.polozka, m.x, m.y - .35 * u, .9, o.uhelPolozky || 0);
     }
+    // výbava, kterou panáček nosí od kapitoly, kde ji našel
+    const vyb = level.kapitola || 1, hrud = { x, y: neck.y + 1.1 * u };
+    if (vyb >= 2 && !bok) {                          // svačina v krabičce na druhém boku
+      c.fillStyle = '#7cc0e0'; c.lineWidth = lw * .8;
+      zaoblene(c, x - 2.25 * u, hip.y - .1 * u, 1.3 * u, .95 * u, .2 * u); c.fill(); c.stroke(); c.lineWidth = lw;
+    }
+    if (vyb >= 3 && smer !== 0) {                    // lupa na krku
+      const lx = hrud.x + (bok ? sx * .35 * u : -.35 * u);
+      c.lineWidth = lw * .6; c.beginPath(); c.moveTo(neck.x, neck.y + .1 * u); c.lineTo(lx, hrud.y - .5 * u); c.stroke();
+      c.fillStyle = 'rgba(190,225,240,.9)'; c.lineWidth = lw * .9;
+      c.beginPath(); c.arc(lx, hrud.y, .55 * u, 0, TAU); c.fill(); c.stroke(); c.lineWidth = lw;
+    }
+    if (vyb >= 6 && smer !== 0) {                    // píšťalka na šňůrce
+      const px = hrud.x + (bok ? -sx * .2 * u : .55 * u);
+      c.lineWidth = lw * .6; c.beginPath(); c.moveTo(neck.x, neck.y + .1 * u); c.lineTo(px, hrud.y + .5 * u); c.stroke();
+      c.fillStyle = Y; c.lineWidth = lw * .8; zaoblene(c, px - .2 * u, hrud.y + .45 * u, .9 * u, .45 * u, .2 * u); c.fill(); c.stroke(); c.lineWidth = lw;
+    }
     if (o.pajka) {                                   // páječka v pravé ruce
       const h = ruce[1], tip = { x: h.x + .5 * u, y: h.y + 1.6 * u };
       c.strokeStyle = K; c.lineWidth = lw * 2.6; c.beginPath(); c.moveTo(h.x - .3 * u, h.y - .9 * u); c.lineTo(h.x + .1 * u, h.y + .4 * u); c.stroke();
@@ -798,6 +815,7 @@
   }
 
   function zastav() {
+    document.querySelectorAll('#program .podezrely').forEach(e => e.classList.remove('podezrely'));
     beh = null;
     vis = vychoziVis();
     document.body.classList.remove('bezi');
@@ -816,6 +834,7 @@
     vis.t0 = performance.now(); vis.dur = beh.krokovani ? KROKOVANI : RYCHLOST[rychlost] || KROKOVANI;
     for (const u of ev.typ === 'vice' ? ev.udalosti : [ev])
       if (BUBLINY[u.typ]) bublina(BUBLINY[u.typ], u.typ === 'ceka' ? vis.dur * 1.2 : Math.max(900, vis.dur * 2.5), u.panacek || 0);
+    zapamatuj(ev);
     zvyrazni(ev);
     stavRadek();
   }
@@ -826,9 +845,15 @@
     if (beh.bezi) dalsiTakt(); else { ovladani(); stavRadek(); }
   }
 
+  // Kdo co naposledy vykonal; při pádu je to blok, kvůli kterému spadl.
+  function zapamatuj(ev) {
+    if (!ev || !beh) return;
+    for (const u of ev.typ === 'vice' ? ev.udalosti : [ev]) if (u.id) (beh.posledni || (beh.posledni = []))[u.panacek || 0] = u.id;
+  }
+
   function okamzite() {
     if (vis.ev) { vis.ev = null; vis.stav = vis.po; }
-    while (!beh.stav.konec) S.takt(level, beh.stav, beh.stroj);
+    while (!beh.stav.konec) zapamatuj(S.takt(level, beh.stav, beh.stroj));
     vis.stav = S.snimek(beh.stav);
     konecBehu();
   }
@@ -859,9 +884,18 @@
       }
     } else {
       neuspechu++;
-      const zprava = k.zprava || S.ZPRAVY[k.duvod] || '';
+      let zprava = k.zprava || S.ZPRAVY[k.duvod] || '';
+      // po třetím neúspěchu za sebou panáček ukáže, kde to spadlo
+      const kdo = k.panacek || 0, id = beh.posledni && beh.posledni[kdo];
+      if (k.duvod === 'pad' && neuspechu >= 3 && id) {
+        if (programy && aktivniPanacek !== kdo) prepniPanacka(kdo);
+        const e = document.querySelector(`#program li.blok[data-id="${id}"]`);
+        if (e) {
+          e.classList.add('podezrely');
+          zprava += ' Panáček ukazuje na blok č. ' + e.querySelector('.cislo').textContent + '.';
+        }
+      }
       if (k.duvod === 'pad') {
-        const kdo = k.panacek || 0;
         if (pocetPanacku() > 1) { vis.poza = 'krci'; vis.pozy = []; vis.pozy[kdo] = 'visi'; bublinaVsem('Jejda.', 1e9); }
         else vis.poza = 'visi';
         bublina(BUBLINY.pad, 1e9, kdo);

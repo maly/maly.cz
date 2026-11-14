@@ -167,6 +167,8 @@
     .blok.vybrany .smaz { display: grid; place-items: center; }
     .blok.aktivni { background: var(--y); box-shadow: 0 0 0 3px var(--hard); z-index: 1; }
     .blok.tazeny { opacity: .3; }
+    .blok.podezrely { box-shadow: 0 0 0 3px var(--red); animation: ukaz 1s ease-in-out 3; }
+    @keyframes ukaz { 50% { transform: translateX(6px); } }
     .vkladani { position: absolute; right: 8px; height: 0; border-top: 4px solid var(--y); outline: 1px solid var(--hard); z-index: 3; pointer-events: none; }
     .vkladani[hidden] { display: none; }
     #panel-program { position: relative; }
