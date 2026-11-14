@@ -190,7 +190,25 @@
         c.strokeStyle = 'rgba(16,19,23,.25)'; c.lineWidth = 1;
         c.strokeRect(cx - .26 * T, cy - .12 * T, .52 * T, .26 * T);
       }
-      if (b === 'O') {
+      if (b === 'O' && level.obvodMapa[x + ',' + y]) {     // patice v obvodu: potisk se symbolem součástky
+        const o = level.obvodMapa[x + ',' + y], w = .66 * T, h = .42 * T;
+        c.fillStyle = 'rgba(16,19,23,.4)'; zaoblene(c, cx - w / 2, cy - h / 2, w, h, .06 * T); c.fill();
+        c.strokeStyle = POTISK; c.lineWidth = Math.max(1.5, T * .03);
+        zaoblene(c, cx - w / 2, cy - h / 2, w, h, .06 * T); c.stroke();
+        c.lineWidth = Math.max(1, T * .02);
+        if (o.druh === 'led') {
+          c.beginPath(); c.arc(cx, cy, .14 * T, 0, TAU); c.stroke();
+        } else {
+          c.beginPath(); c.moveTo(cx - .16 * T, cy);
+          for (let i = 0; i < 6; i++) c.lineTo(cx - .12 * T + i * .05 * T, cy + (i % 2 ? .06 : -.06) * T);
+          c.lineTo(cx + .16 * T, cy); c.stroke();
+        }
+        c.fillStyle = MED_S;
+        for (const sx of [-1, 1]) { c.beginPath(); c.arc(cx + sx * .25 * T, cy, .045 * T, 0, TAU); c.fill(); }
+        c.fillStyle = POTISK; c.font = `800 ${Math.max(7, Math.round(T * .11))}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+        c.textAlign = 'left'; c.textBaseline = 'top';
+        c.fillText(String(o.poradi + 1), cx - w / 2 + .03 * T, cy - h / 2 - .14 * T);
+      } else if (b === 'O') {
         const w = .62 * T, h = .38 * T;
         c.fillStyle = 'rgba(16,19,23,.35)'; c.fillRect(cx - w / 2, cy - h / 2, w, h);
         c.strokeStyle = POTISK; c.lineWidth = Math.max(1.5, T * .035);
@@ -262,8 +280,11 @@
         c.beginPath(); c.moveTo(0, -.06 * u); c.quadraticCurveTo(.08 * u, -.14 * u, 0, -.2 * u); c.quadraticCurveTo(-.08 * u, -.26 * u, .02 * u, -.32 * u); c.stroke();
         break;
       case 'led':
-        c.fillStyle = '#e74c3c'; c.strokeStyle = K; c.lineWidth = lw;
-        c.beginPath(); c.arc(0, 0, .14 * u, 0, TAU); c.fill(); c.stroke();
+        if (pol.otoceno) c.scale(-1, 1);
+        c.strokeStyle = K; c.lineWidth = u * .035;
+        c.beginPath(); c.moveTo(-.28 * u, 0); c.lineTo(.28 * u, 0); c.stroke();
+        c.fillStyle = '#e74c3c'; c.lineWidth = lw;
+        c.beginPath(); c.arc(0, 0, .14 * u, -1.25, 1.25, true); c.closePath(); c.fill(); c.stroke();   // plochá strana = katoda vpravo
         c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.arc(-.05 * u, -.05 * u, .04 * u, 0, TAU); c.fill();
         break;
       case 'kondenzator':
@@ -342,6 +363,36 @@
     c.beginPath(); c.moveTo(x - .05 * T, y + .2 * T); c.lineTo(x - .05 * T, y - .45 * T); c.stroke();
     c.fillStyle = Y; c.beginPath(); c.moveTo(x - .05 * T, y - .45 * T); c.lineTo(x + .32 * T, y - .32 * T); c.lineTo(x - .05 * T, y - .19 * T); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = 'rgba(16,19,23,.25)'; c.beginPath(); c.ellipse(x - .05 * T, y + .2 * T, .1 * T, .04 * T, 0, 0, TAU); c.fill();
+  }
+
+  // Obvod: značky polarity, cín na zapájených paticích, rozsvícené LED.
+  function kresliObvod(c, sn, vrch) {
+    if (!level.obvod) return;
+    for (const o of level.obvod) {
+      const k = o.x + ',' + o.y, cx = stredX(o.x), cy = stredY(o.y);
+      if (!vrch) {
+        if (o.druh === 'led') {
+          const sx = sn.znacky && sn.znacky[k] ? 1 : -1;
+          c.fillStyle = POTISK; c.font = `900 ${Math.max(9, Math.round(T * .2))}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText('+', cx + sx * .41 * T, cy - .02 * T);
+        }
+        continue;
+      }
+      if (sn.cin && sn.cin[k]) {
+        for (const sx of [-1, 1]) {
+          c.fillStyle = '#e9edf0'; c.strokeStyle = '#7d868e'; c.lineWidth = 1;
+          c.beginPath(); c.ellipse(cx + sx * .25 * T, cy, .07 * T, .055 * T, 0, 0, TAU); c.fill(); c.stroke();
+          c.fillStyle = W; c.beginPath(); c.arc(cx + sx * .25 * T - .02 * T, cy - .015 * T, .015 * T, 0, TAU); c.fill();
+        }
+      }
+      if (o.druh === 'led' && sn.podlaha && S.sviti(level, sn, o)) {
+        const gr = c.createRadialGradient(cx, cy, 0, cx, cy, .9 * T);
+        gr.addColorStop(0, 'rgba(255,90,60,.85)'); gr.addColorStop(.25, 'rgba(255,80,50,.45)'); gr.addColorStop(1, 'rgba(255,80,50,0)');
+        c.fillStyle = gr; c.beginPath(); c.arc(cx, cy, .9 * T, 0, TAU); c.fill();
+        c.fillStyle = '#fff3e0'; c.beginPath(); c.arc(cx - .01 * T, cy + .01 * T, .06 * T, 0, TAU); c.fill();
+      }
+    }
   }
 
   function kresliPodlahu(c, sn) {
@@ -445,7 +496,21 @@
     // nesená součástka mezi rukama
     if (o.polozka) {
       const m = lerpP(ruce[0], ruce[1], .5);
-      kresliPolozku(c, o.polozka, m.x, m.y - .35 * u, .9);
+      kresliPolozku(c, o.polozka, m.x, m.y - .35 * u, .9, o.uhelPolozky || 0);
+    }
+    if (o.pajka) {                                   // páječka v pravé ruce
+      const h = ruce[1], tip = { x: h.x + .5 * u, y: h.y + 1.6 * u };
+      c.strokeStyle = K; c.lineWidth = lw * 2.6; c.beginPath(); c.moveTo(h.x - .3 * u, h.y - .9 * u); c.lineTo(h.x + .1 * u, h.y + .4 * u); c.stroke();
+      c.strokeStyle = '#d0453a'; c.lineWidth = lw * 1.4; c.beginPath(); c.moveTo(h.x - .3 * u, h.y - .9 * u); c.lineTo(h.x + .1 * u, h.y + .4 * u); c.stroke();
+      c.strokeStyle = '#8d959c'; c.lineWidth = lw; c.beginPath(); c.moveTo(h.x + .1 * u, h.y + .4 * u); c.lineTo(tip.x, tip.y); c.stroke();
+      c.strokeStyle = K;
+      if (o.dym != null && o.dym > .3) {
+        const d = (o.dym - .3) / .7;
+        c.strokeStyle = `rgba(150,150,150,${.9 - d * .8})`; c.lineWidth = Math.max(1.2, u * .25);
+        c.beginPath(); c.moveTo(tip.x, tip.y - .3 * u);
+        c.quadraticCurveTo(tip.x + 1.2 * u, tip.y - 1.5 * u - d * 2 * u, tip.x - .2 * u, tip.y - 2.5 * u - d * 3 * u); c.stroke();
+        c.strokeStyle = K;
+      }
     }
     if (o.hvezdy) {
       for (let i = 0; i < 3; i++) {
@@ -588,6 +653,15 @@
       }
       case 'plnaRuka': case 'plnaKapsa': case 'prazdnaKapsa':
         pos = { x: pos.x + Math.sin(p * TAU * 3) * .03 * T, y: pos.y }; break;
+      case 'pajej': case 'vypajej': case 'pajejNaprazdno': case 'uzPajeno': case 'neniCin': case 'pripajeno': {
+        o.ruceCil = bodPolozeni(z.x, z.y); o.ruceK = Math.sin(p * Math.PI); o.pajka = ev.typ !== 'pripajeno';
+        if (ev.typ === 'pajej' || ev.typ === 'vypajej') o.dym = p;
+        break;
+      }
+      case 'otocSoucastku':
+        o.polozka = p < .5 ? vis.pred.drzi : vis.po.drzi;
+        o.uhelPolozky = (p < .5 ? p : p - 1) * Math.PI;
+        break;
       case 'doKapsy': case 'zKapsy': case 'prohod': {
         // ruce s věcí dolů ke kapse, výměna v polovině, zpátky nahoru
         const k = Math.sin(p * Math.PI);
@@ -610,7 +684,9 @@
     const sn = ev ? (p < prepnuti(ev) ? vis.pred : vis.po) : vis.stav;
     const f = postava(now, ev, p);
     if (f.cil) kresliCil(g, f.cil.x, f.cil.y);
+    kresliObvod(g, sn, false);
     kresliPodlahu(g, sn);
+    kresliObvod(g, sn, true);
     // zásobníky a panáček podle hloubky (co je níž, je blíž)
     const veci = [];
     if (level.privodPos) veci.push([level.privodPos.y + level.privodPos.posun[1], () => kresliPrivod(g, sn, false)]);
@@ -627,6 +703,7 @@
   const BUBLINY = {
     naraz: 'Au!', hmat: 'Nic tu není.', plnaRuka: 'Mám plné ruce.', prazdnaRuka: 'Nic nedržím.', rozsyp: 'Jejda!', pad: 'Áááá!',
     plnaKapsa: 'Kapsa je plná.', prazdnaKapsa: 'Kapsa je prázdná.',
+    pajejNaprazdno: 'Není co pájet.', uzPajeno: 'Už je zapájeno.', neniCin: 'Tady nic připájené není.', pripajeno: 'Je to připájené.',
   };
   const sKapsou = () => (level.bloky || []).includes('uloz');
 
@@ -794,6 +871,9 @@
     uloz: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 2v6M7.5 5.5 10 8l2.5-2.5"/>',
     vyndej: '<path d="M4 10h12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 13h12M10 8V2M7.5 4.5 10 2l2.5 2.5"/>',
     prohod: '<path d="M4 7h11M12 4l3 3-3 3M16 13H5M8 10l-3 3 3 3"/>',
+    pajej: '<path d="M3 3l7 7M8.5 8.5l3 3-2 2-3-3zM11.5 11.5 16 16M14 18c1-1 3-1 4 0"/>',
+    vypajej: '<path d="M3 3l7 7M8.5 8.5l3 3-2 2-3-3zM11.5 11.5 14 14M16 18v-6M13.5 14.5 16 12l2.5 2.5"/>',
+    otoc: '<path d="M4 10a6 6 0 1 0 2-4.5M4 3v4h4M8 10h4"/>',
   };
   const ikona = op => `<svg class="ikona" viewBox="0 0 20 20" aria-hidden="true">${IKONY[op] || ''}</svg>`;
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };

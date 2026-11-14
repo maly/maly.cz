@@ -347,5 +347,26 @@
       cile: { bloky: 17, kroky: 47 },
       testy: { viditelne: 3, skryte: 2 },
     },
+    // ---------- kapitola 5: Páječka (osazování) ----------
+    {
+      id: '5.1',
+      kapitola: 5,
+      kapitolaNazev: 'Páječka',
+      nazev: 'Svítivka',
+      zadani: 'Přívod vydá LED a pak odpor. Osaď je do patic s jejich symbolem a zapájej. Když je obvod celý, LED se rozsvítí.',
+      napoveda: 'Pájej, když stojíš na osazené patici. Zapájenou součástku už nejde zvednout.',
+      mapa: [
+        '......',
+        '.POO..',
+        '......',
+      ],
+      start: { smer: 'vychod' },
+      privod: { strana: 'sever', poradi: ['led', 'odpor'] },
+      obvod: [{ x: 2, y: 1, druh: 'led' }, { x: 3, y: 1, druh: 'odpor' }],
+      bloky: ['krok', 'vlevo', 'vpravo', 'skoc', 'zvedni', 'poloz', 'opakuj', 'stale', 'kdyz', 'uloz', 'vyndej', 'prohod', 'pajej', 'vypajej', 'otoc'],
+      podminky: ['drzim', 'druh:led', 'druh:odpor', 'druh:spaleny', 'znacka:obracena', 'patice:volna', 'patice:osazena', 'kapsa:neco', 'cesta:vpred', 'cesta:vlevo', 'cesta:vpravo'],
+      cile: { bloky: 14, kroky: 14 },
+      testy: { viditelne: 1, skryte: 0 },
+    },
   ];
 });

@@ -624,7 +624,18 @@ def kontrola4(page, lid):
     page.click('#zastav')
 
 
+KAP1_4 = KAP1_3 + ['4.1', '4.2', '4.3', '4.4']
+RESENI5 = {
+    '5.1': ['zvedni', 'krok', 'poloz', 'pajej', 'vpravo', 'vpravo', 'krok', 'vpravo', 'vpravo', 'zvedni', 'krok', 'krok', 'poloz', 'pajej'],
+}
+
+
+def kontrola5(page, lid):
+    page.screenshot(path=f'{SNIMKY}/k-{lid}-program.png')
+
+
 with sync_playwright() as p:
+    kapitola(p, 'kapitola 5', RESENI5, KAP1_4, kontrola5)
     kapitola(p, 'kapitola 4', RESENI4, KAP1_3, kontrola4)
     kapitola_mobil(p, '4.4', RESENI4['4.4'], KAP1_3 + ['4.1', '4.2', '4.3'])
     kapitola3(p)
