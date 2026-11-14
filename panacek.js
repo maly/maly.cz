@@ -216,6 +216,12 @@ html.pnk-tool .pnk-pin{animation:pnk-glint 1.5s ease-in-out infinite}
 @keyframes pnk-sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
 .pnk-hang.is-jiggle{animation:pnk-jiggle .7s ease-out}
 @keyframes pnk-jiggle{20%{transform:rotate(16deg)}45%{transform:rotate(-11deg)}70%{transform:rotate(5deg)}}
+.pnk-dl-pcb{position:absolute;right:6%;top:calc(44% + 60px);width:28%;display:block;transform:rotate(4deg);transition:transform .2s;filter:drop-shadow(3px 4px 0 rgba(16,19,23,.18))}
+.pnk-dl-pcb svg{display:block;width:100%;height:auto}
+.pnk-dl-pcb:hover,.pnk-dl-pcb:focus-visible{transform:rotate(1deg) translateY(-4px)}
+.pnk-dl-pcb:focus-visible{outline:2px solid ${TEAL};outline-offset:4px}
+.pnk-dl-pcb:hover .pnk-pcb-led,.pnk-dl-pcb:focus-visible .pnk-pcb-led{fill:#ff6b4a;filter:drop-shadow(0 0 4px #ff5a3c)}
+.pnk-dl-pcb-label{position:absolute;right:6%;width:28%;top:calc(44% + 60px + 28% * .72 + 14px);text-align:center;color:#5f6872;font:700 10px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
 .pnk-dl-msg{margin-top:10px;color:#5f6872;font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;opacity:0;transition:opacity .3s}
 .pnk-dl-msg.is-on{opacity:1}
 .pnk-dl-hook.is-empty .pnk-hang,.pnk-dl-hook.is-empty .pnk-dl-msg{visibility:hidden}
@@ -1427,6 +1433,7 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
       ['Newsletter', 'Kladu odpory', 'https://adent.substack.com/'],
       ['Archiv textů', 'Den 1', 'https://den1.cz/'],
     ],
+    hra: { url: 'plosnak/', popis: 'Hra · Plošňák' },   // rozpracovaná deska na ponku vede do hry
   };
 
   const world = {
@@ -1549,6 +1556,17 @@ html.pnk-pliers .index-tags .tag:not(.pnk-hole){outline:2px dashed #f2b705;outli
     d.innerHTML = `<span class="pnk-dl-label">02 / Dílna</span>
 <div class="pnk-dl-books">${books}</div><div class="pnk-dl-shelf"></div><span class="pnk-dl-shelf-label">Knihy · elektroniche.cz</span><button type="button" class="pnk-dl-iron" aria-label="Páječka"><canvas></canvas></button>
 <div class="pnk-dl-board">${notes}</div>
+<a class="pnk-dl-pcb" href="${DILNA.hra.url}" aria-label="Plošňák, hra"><svg viewBox="0 0 120 86" aria-hidden="true">
+<rect x="2" y="2" width="116" height="82" rx="7" fill="#2f6b47" stroke="${K}" stroke-width="2.5"/>
+<g fill="#eef1f4" stroke="${K}" stroke-width="1.5"><circle cx="11" cy="11" r="3.5"/><circle cx="109" cy="11" r="3.5"/><circle cx="11" cy="75" r="3.5"/><circle cx="109" cy="75" r="3.5"/></g>
+<path d="M20 58H52V32H92" fill="none" stroke="${K}" stroke-width="10" stroke-linejoin="round"/>
+<path d="M20 58H52V32H92" fill="none" stroke="#dba54a" stroke-width="7" stroke-linejoin="round"/>
+<g fill="#dba54a" stroke="${K}" stroke-width="1.5"><circle cx="20" cy="58" r="6"/><circle cx="52" cy="58" r="6"/><circle cx="52" cy="32" r="6"/><circle cx="72" cy="32" r="6"/></g>
+<circle class="pnk-pcb-led" cx="94" cy="32" r="6.5" fill="#e74c3c" stroke="${K}" stroke-width="1.5"/>
+<g fill="none" stroke="${K}" stroke-width="1.6" stroke-linecap="round"><path d="M52 22v-7M52 15l-3 6M52 15l3 6M52 22l-3 6M52 22l3 6"/></g>
+<circle cx="52" cy="11" r="3.6" fill="#fff" stroke="${K}" stroke-width="1.5"/><path d="M48.4 10.4a3.6 3.6 0 0 1 7.2 0z" fill="${TEAL}" stroke="${K}" stroke-width="1.2"/><path d="M55 9.6h3.4" stroke="${K}" stroke-width="2"/>
+<text x="16" y="76" fill="#e3ece5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="8.5" font-weight="800" letter-spacing=".08em">PLOŠŇÁK</text>
+</svg></a><span class="pnk-dl-pcb-label">${esc(DILNA.hra.popis)}</span>
 <div class="pnk-dl-hook"><span class="pnk-peg"></span><button type="button" class="pnk-hang" aria-label="Další nástroj, zatím nedosažitelný"><canvas></canvas><span class="pnk-tag">?</span></button><span class="pnk-dl-msg">Moc vysoko</span></div>`;
     port.prepend(d);
     world.dilna = d;
@@ -3578,7 +3596,7 @@ html.pnk-turning .pnk-ply{display:block}
   const VERBS = [['spustit', 'drill'], ['použít', 'pl'], ['rozebrat', 'sd'], ['napsat si poznámky', 'iron'], ['zjistit, kde jsou hranice', 'torch']];
   // Co je v šuplících. Zatím panáčkovy věci; sem patří tvoje podrobnosti k jednotlivým řádkům.
   const SUPLIKY = ['Rozepsaný titulek: „Panáček ukradl šroubovák." Škrtnuto.', '// TODO: vrátit šroubovák\n// TODO: neusínat ve službě', 'Svačina. Nesahat.'];
-  const SVETLO = ['Agenti', 'made4fun', 'Čeština', 'Satira', 'Osm bitů', 'Kdo je vepředu', 'Stručnost'];   // která poznámka z rubu patří ke kterému odkazu
+  const SVETLO = ['Agenti', 'made4fun', null, 'Čeština', 'Satira', 'Osm bitů', 'Kdo je vepředu', 'Stručnost'];   // která poznámka z rubu patří ke kterému odkazu (Plošňák žádnou nemá)
   const secEl = { h2: null, verbs: [], items: [], links: [], tip: null };
   const curTool = () => (tool.on ? 'sd' : tool.pl ? 'pl' : tool.cur);
 
@@ -3819,7 +3837,7 @@ html.pnk-t-iron .pnk-ref.is-off,html.pnk-t-iron .item.is-cut,html.pnk-t-iron .pn
       const tip = secEl.tip, a = tool.cur === 'torch' && e.target.closest ? e.target.closest('.pnk-ref') : null;
       if (!a) { tip.style.display = 'none'; return; }
       const n = NOTES.find(v => v[0] === SVETLO[secEl.links.indexOf(a)]);
-      if (!n) return;
+      if (!n) { tip.style.display = 'none'; return; }
       tip.innerHTML = '<b></b><span></span>'; tip.firstChild.textContent = n[0]; tip.lastChild.textContent = n[1];
       tip.style.display = 'block';
       tip.style.transform = `translate3d(${Math.min(e.clientX + 18, innerWidth - 280)}px,${e.clientY + 22}px,0)`;
