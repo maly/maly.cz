@@ -233,6 +233,10 @@
           for (let i = g.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [g[i], g[j]] = [g[j], g[i]]; }
           g.forEach(d => out.push(novy(d)));
         }
+        for (const [druh, [a, b]] of Object.entries(p.primes || {})) {   // vmíchané kusy navíc (spálené)
+          const m = a + Math.floor(r() * (b - a + 1));
+          for (let k = 0; k < m; k++) out.splice(Math.floor(r() * (out.length + 1)), 0, novy(druh));
+        }
         return out;
       }
       for (let k = 0; k < n; k++) {
@@ -261,7 +265,7 @@
         predem.push({ x: o.x, y: o.y, polozka: pol }); cin.push(o.x + ',' + o.y);
       }
     }
-    const skupin = (level.privod || {}).pary ? privod.length / level.privod.pary.length
+    const skupin = (level.privod || {}).pary ? privod.filter(p => p.druh !== 'spaleny').length / level.privod.pary.length
       : level.skupinZ === 'dobre' ? privod.filter(p => p.druh !== 'spaleny').length : 0;
     const podlaha = (level.podlaha || []).map(p => ({ x: p.x, y: p.y, polozka: { id: id++, druh: p.druh || 'propojka' } }));
     if (level.paska) generuj(level.paska).forEach((p, i) => podlaha.push({ x: level.paska_[i].x, y: level.paska_[i].y, polozka: p }));
@@ -509,6 +513,7 @@
 
   // Vyhodnocení na konci směny. Vrací { duvod, uspech, zprava }.
   function vyhodnot(level, s, duvod) {
+    if (level.kontrola === 'piskoviste') return { duvod, uspech: false, piskoviste: true, zprava: 'Směna skončila. Na pískovišti se nic nehodnotí.' };
     const chyby = [];
     if (s.ag) {                                         // víc panáčků: co drží a mají v kapsách
       const d = s.ag.find(a => a.drzi), k = s.ag.find(a => a.kapsa);

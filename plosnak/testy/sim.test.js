@@ -16,7 +16,7 @@ function prg(zapis) {
   });
 }
 
-for (const def of LEVELY) {
+for (const def of LEVELY.filter(l => l.kontrola !== 'piskoviste')) {
   const level = S.pripravLevel(def);
   const r = RESENI[def.id];
   const prgL = def.panacci ? (x => x.map(prg)) : prg;     // víc panáčků: pole programů
@@ -154,4 +154,11 @@ test('dva panáčci: krok na políčko druhého je náraz', () => {
   const ev = S.takt(l, s, m);
   assert.strictEqual(ev.udalosti[0].typ, 'naraz');
   assert.strictEqual(s.ag[0].x, 0);
+});
+
+test('pískoviště: nic se nehodnotí, program doběhne', () => {
+  const l = S.pripravLevel(LEVELY.find(x => x.kontrola === 'piskoviste'));
+  const v = S.spustTest(l, prg(['zvedni', 'krok', 'krok', 'poloz']), 0);
+  assert.ok(!v.uspech);
+  assert.match(v.zprava, /nehodnotí/);
 });

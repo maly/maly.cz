@@ -576,7 +576,10 @@ def kapitola(p, nazev, reseni, splnene, kontrola=None):
         page.click('#rychlost [data-r="0"]')
         pockej_konec(page, 20000)
         over(page.evaluate('Plosnak.beh.konec.uspech'), f'{lid}: referenční řešení uspěje')
-        page.wait_for_selector('#vysledek:not([hidden])', timeout=3000)
+        if lid == '6.3':
+            page.wait_for_timeout(4200)
+            page.screenshot(path=f'{SNIMKY}/k-6.3-oziveni.png')
+        page.wait_for_selector('#vysledek:not([hidden])', timeout=9000)
         if i < len(ids) - 1:
             page.click('[data-akce="dalsi"]')
     ctx.close(); b.close()
@@ -655,6 +658,7 @@ RESENI6 = {
     '6.1': ([['stale', ['zvedni', 'krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]],
             [['stale', ['cekej', 'krok', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'poloz', 'vpravo', 'vpravo']]]),
     '6.2': ([['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vlevo', ['opakuj', 4, [['kdyz', 'drzim', [['kdyz', 'patice:volna', ['poloz', 'pajej'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 3, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok']]]),
+    '6.3': ([['stale', ['zvedni', ['kdyz', 'druh:spaleny', ['vpravo', 'vpravo', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok'], ['krok', 'krok', 'poloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'krok', 'vpravo', 'vpravo', 'cekej']]]]], [['stale', ['cekej', 'krok', 'zvedni', 'uloz', 'vpravo', 'vpravo', 'krok', 'hvizdni', 'vpravo', 'vpravo', 'cekej', 'krok', 'zvedni', 'vpravo', 'vpravo', 'krok', 'hvizdni', ['kdyz', 'druh:odpor', ['prohod'], []], 'krok', 'vlevo', ['opakuj', 7, [['kdyz', 'drzim', [['kdyz', 'patice:volna', [['kdyz', 'znacka:obracena', ['otoc'], []], 'poloz', 'pajej', 'vpravo', 'krok', 'vyndej', 'poloz', 'pajej', 'vlevo'], []]], []], ['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'vpravo', ['opakuj', 7, [['kdyz', 'cesta:vpred', ['krok'], []]]], 'vpravo', 'krok', 'krok']]]),
 }
 
 
@@ -667,7 +671,49 @@ def kontrola6(page, lid):
     page.click('#zastav')
 
 
+def piskoviste(p):
+    print('Chromium desktop: pískoviště')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 1280, 'height': 900})
+    page.evaluate(odemceno_do('P', KAP1_5 + ['6.1', '6.2', '6.3']))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    over(page.evaluate('Plosnak.level') == 'P', 'pískoviště odemčené po finále')
+    over(not page.locator('#lv-cile').is_visible(), 'pískoviště bez cílů')
+    sestav(page, ['zvedni', 'krok', 'krok', 'poloz', ['kdyz', 'druh:led', ['krok'], []]], page.click)
+    page.click('#rychlost [data-r="0"]')
+    page.click('#spust')
+    pockej_konec(page)
+    over('Směna skončila' in page.inner_text('#stav') and 'chyba' not in page.get_attribute('#stav', 'class'), 'pískoviště nehodnotí')
+    page.screenshot(path=f'{SNIMKY}/k-piskoviste.png')
+    ctx.close(); b.close()
+
+
+def mobil_dva(p):
+    print('Chromium mobil 390: dva panáčci (6.1)')
+    b = p.chromium.launch()
+    ctx, page = otevri(b, viewport={'width': 390, 'height': 844}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page.evaluate(odemceno_do('6.1', KAP1_5))
+    page.reload(); page.wait_for_function('window.Plosnak')
+    cdp = ctx.new_cdp_session(page)
+    klik = lambda sel: tukni(cdp, page, sel)
+    for j, pr in enumerate(RESENI6['6.1']):
+        klik(f'#zalozky [data-ag="{j}"]')
+        sestav(page, pr, klik)
+    over(page.evaluate('Plosnak.programy') == [normal(pr) for pr in RESENI6['6.1']], 'mobil: oba programy ťukáním')
+    sirka = page.evaluate('document.documentElement.scrollWidth')
+    over(sirka <= 390, f'mobil 6.1: bez vodorovného posuvníku ({sirka} px)')
+    page.evaluate('window.scrollTo(0, 0)')
+    klik('#rychlost [data-r="0"]'); klik('#spust')
+    pockej_konec(page, 20000)
+    over(page.evaluate('Plosnak.beh.konec.uspech'), 'mobil 6.1: uspěje')
+    page.evaluate('window.scrollTo(0, 0)')
+    page.screenshot(path=f'{SNIMKY}/m-6.1.png', full_page=True)
+    ctx.close(); b.close()
+
+
 with sync_playwright() as p:
+    mobil_dva(p)
+    piskoviste(p)
     kapitola(p, 'kapitola 6', RESENI6, KAP1_5, kontrola6)
     kapitola(p, 'kapitola 5', RESENI5, KAP1_4, kontrola5)
     kapitola(p, 'kapitola 4', RESENI4, KAP1_3, kontrola4)

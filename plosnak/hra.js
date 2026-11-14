@@ -722,6 +722,52 @@
     });
     veci.sort((a, b) => a[0] - b[0]).forEach(v => v[1]());
     hlavy.forEach((h, i) => { const b = vis.bubliny[i]; if (b && h && now < b.do) kresliBublinu(g, b.text, h.x, h.y); });
+    kresliOziveni(g, now);
+  }
+
+  // ---------- oživení desky po finále ----------
+
+  function ozivit() {
+    vis.oziveni = performance.now();
+    try {                                              // krátká znělka, smí selhat
+      const A = window.AudioContext || window.webkitAudioContext, a = new A();
+      [523, 659, 784, 1047, 784, 1047].forEach((f, i) => {
+        const o = a.createOscillator(), gn = a.createGain(), t = a.currentTime + 1.4 + i * .14;
+        o.type = 'square'; o.frequency.value = f;
+        gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(.06, t + .01); gn.gain.exponentialRampToValueAtTime(.001, t + (i === 5 ? .5 : .13));
+        o.connect(gn); gn.connect(a.destination); o.start(t); o.stop(t + .6);
+      });
+    } catch (e) { /* bez zvuku */ }
+  }
+
+  function kresliOziveni(c, now) {
+    if (!vis.oziveni) return;
+    const t = (now - vis.oziveni) / 1000;
+    if (t < 1.2) {                                     // světla probliknou jedno po druhém
+      const n = (level.obvod || []).filter(o => o.druh === 'led');
+      n.forEach((o, i) => {
+        if (Math.floor(t * 8) % n.length !== i) return;
+        c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.arc(stredX(o.x), stredY(o.y), .22 * T, 0, TAU); c.fill();
+      });
+      return;
+    }
+    const w = Math.min(CW - 16, 7.2 * T), h = 2.2 * T, x = (CW - w) / 2, y = OY + (level.vyska * T - h) / 2;
+    const k = Math.min(1, (t - 1.2) / .3);
+    c.save(); c.globalAlpha = k;
+    c.fillStyle = '#0b1f14'; c.strokeStyle = K; c.lineWidth = 2;
+    zaoblene(c, x, y, w, h, .12 * T); c.fill(); c.stroke();
+    const radky = ['MALY.CZ BASIC 1.0', '64K RAM OK', '', 'MALY.CZ READY'];
+    const fs = Math.max(11, Math.round(T * .24));
+    c.font = `700 ${fs}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    c.fillStyle = '#7dff9a'; c.textAlign = 'left'; c.textBaseline = 'top';
+    let znaku = Math.floor((t - 1.5) * 28);
+    radky.forEach((r, i) => {
+      if (znaku <= 0) return;
+      c.fillText(r.slice(0, znaku), x + .3 * T, y + .25 * T + i * fs * 1.25);
+      znaku -= r.length + 4;
+    });
+    if (znaku > 0 && Math.floor(t * 2.5) % 2) c.fillRect(x + .3 * T, y + .25 * T + 4 * fs * 1.25, fs * .6, fs);
+    c.restore();
   }
 
   // ---------- běh programu ----------
@@ -796,7 +842,10 @@
     beh.bezi = false; beh.hotovo = true;
     const k = beh.stav.konec;
     zvyrazni(null);
-    if (k.uspech) {
+    if (k.piskoviste) {
+      vis.poza = 'stoji'; bublinaVsem('Hotovo.', 2500);
+      stavRadek(`Směna skončila po ${kroku(beh.stav.takt)}.`, '');
+    } else if (k.uspech) {
       const v = S.vyhodnotReseni(level, programyProBeh());
       if (v.vsechny) {
         vis.poza = 'jasa'; bublinaVsem('Hotovo!', 1e9); neuspechu = 0;
@@ -865,21 +914,22 @@
     $('#vysledek').innerHTML = `
       <div class="karta" role="dialog" aria-labelledby="vy-titul">
         <div class="vy-stitek">Level ${level.id}</div>
-        <h2 id="vy-titul">Splněno</h2>
+        <h2 id="vy-titul">${level.finale ? 'Deska ožila!' : 'Splněno'}</h2>
         <table>
           <tr><th>Bloky</th><td>${v.bloky}</td><td>cíl nejvýš ${c.bloky}</td><td>${ok(v.bloky, c.bloky)}</td></tr>
           <tr><th>Kroky</th><td>${String(v.kroky).replace('.', ',')}</td><td>cíl nejvýš ${c.kroky}</td><td>${ok(v.kroky, c.kroky)}</td></tr>
         </table>
         <p class="vy-nej">Nejlepší: ${bloku(z.nejlepsi.bloky)}, ${kroku(z.nejlepsi.kroky)}</p>
-        <p class="vy-reakce">„${reakce}“</p>
+        <p class="vy-reakce">„${level.finale ? 'Tak tohle jsme postavili. Pískoviště je otevřené.' : reakce}“</p>
         <div class="vy-tl">
           <button type="button" class="tl" data-akce="zpet">Zpět k programu</button>
           ${dalsiLevel()
-            ? `<button type="button" class="tl hlavni" data-akce="dalsi">Další level ${dalsiLevel().id}</button>`
+            ? `<button type="button" class="tl hlavni" data-akce="dalsi">${dalsiLevel().kontrola === 'piskoviste' ? 'Pískoviště' : 'Další level ' + dalsiLevel().id}</button>`
             : '<button type="button" class="tl hlavni" disabled>Další kapitola se staví</button>'}
         </div>
       </div>`;
-    setTimeout(() => { if (beh && beh.hotovo && vis.poza === 'jasa') $('#vysledek').hidden = false; }, 900);
+    if (level.finale) ozivit();
+    setTimeout(() => { if (beh && beh.hotovo && vis.poza === 'jasa') $('#vysledek').hidden = false; }, level.finale ? 6200 : 900);
     vykresliZadani(); vykresliLevely();
   }
 
@@ -887,7 +937,7 @@
     const nav = $('#levely'); nav.innerHTML = '';
     LEVELY.forEach((l, i) => {
       if (i && l.kapitola !== LEVELY[i - 1].kapitola) nav.appendChild(el('span', 'predel'));
-      const z = data.levely[l.id] || {}, b = el('button', 'tl lv' + (z.splneno ? ' hotovo' : ''), l.id);
+      const z = data.levely[l.id] || {}, b = el('button', 'tl lv' + (z.splneno ? ' hotovo' : ''), l.kontrola === 'piskoviste' ? 'Pískoviště' : l.id);
       b.type = 'button'; b.dataset.level = l.id; b.disabled = !odemceno(i);
       b.title = l.nazev + (z.splneno ? ' (splněno)' : b.disabled ? ' (zamčeno)' : '');
       if (l.id === level.id) b.setAttribute('aria-current', 'step');
@@ -925,8 +975,8 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
   function vykresliZadani() {
-    $('#lv-stitek').textContent = `Kapitola ${level.kapitola} · ${level.kapitolaNazev}`;
-    $('#lv-nazev').textContent = `${level.id} ${level.nazev}`;
+    $('#lv-stitek').textContent = level.kontrola === 'piskoviste' ? 'Bez zadání' : `Kapitola ${level.kapitola} · ${level.kapitolaNazev}`;
+    $('#lv-nazev').textContent = level.kontrola === 'piskoviste' ? level.nazev : `${level.id} ${level.nazev}`;
     $('#lv-text').textContent = level.zadani;
     $('#lv-napoveda').textContent = level.napoveda || '';
     $('#lv-napoveda').hidden = !level.napoveda;
@@ -935,6 +985,7 @@
     lg.hidden = !level.legenda;
     lg.innerHTML = level.legenda ? '<span class="lg-titul">První pruh</span>' + S.PRUHY.map((k, i) =>
       `<span class="lg"><i style="background:${PRUHY[k]}"></i>${i + 1}</span>`).join('') : '';
+    $('#lv-cile').hidden = level.kontrola === 'piskoviste';
     $('#lv-cile').innerHTML =
       `<span class="cip">Cíl: nejvýš ${bloku(level.cile.bloky)}</span><span class="cip">v průměru nejvýš ${kroku(level.cile.kroky)}</span>` +
       (n ? `<span class="cip nej">Nejlepší: ${bloku(n.bloky)}, ${kroku(n.kroky)}</span>` : '');
@@ -1021,7 +1072,7 @@
     };
     program.forEach(u => ol.appendChild(uzelEl(u)));
     const n = programy ? programy.reduce((a, p) => a + S.pocetBloku(p), 0) : S.pocetBloku(program);
-    $('#pocet').textContent = n + ' / ' + level.cile.bloky;
+    $('#pocet').textContent = level.kontrola === 'piskoviste' ? bloku(n) : n + ' / ' + level.cile.bloky;
     $('#pocet').title = bloku(n) + ', cíl nejvýš ' + level.cile.bloky;
     $('#pocet').classList.toggle('pres', n > level.cile.bloky);
     $('#vymaz').disabled = !program.length;
